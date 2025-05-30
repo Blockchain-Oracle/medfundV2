@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { X, CreditCard, Wallet, Heart, Shield, Info } from "lucide-react";
 import { toast } from "sonner";
 import CardanoPaymentModal from "./CardanoPaymentModal";
+import StripePaymentModal from "./StripePaymentModal";
+import useCardano from "@/hooks/useCardano";
 
 interface DonationFormProps {
   campaign: {
@@ -26,6 +28,10 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
   const [tipAmount, setTipAmount] = useState("0");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCardanoModal, setShowCardanoModal] = useState(false);
+  const [showStripeModal, setShowStripeModal] = useState(false);
+  
+  // Use the Cardano hook for USD to ADA conversion
+  const { usdToAda } = useCardano();
 
   // Mock campaign wallet address - in a real app, this would come from the campaign data
   const campaignCardanoAddress = "addr_test1qp9yfvry9vmwjmxjlzkcxyl7xnflwhvn3gm9q5fxpw6lx6w8j37xclznqcw2j0m62h0mqmufya6jknvw5nutvs7a5c4s4m3wlh";
@@ -38,24 +44,20 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
       return;
     }
 
-    setIsProcessing(true);
-
-    try {
-      if (paymentMethod === "stripe") {
-        // Simulate Stripe payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        toast.success(`Thank you for your $${donationAmount} donation!`);
-        onClose();
-      } else if (paymentMethod === "crypto") {
-        // Show Cardano payment modal instead of simulating
-        setIsProcessing(false);
-        setShowCardanoModal(true);
-      }
-    } catch (error) {
-      toast.error("Payment failed. Please try again.");
-      setIsProcessing(false);
+    if (paymentMethod === "stripe") {
+      // Show Stripe payment modal
+      setShowStripeModal(true);
+    } else if (paymentMethod === "crypto") {
+      // Show Cardano payment modal
+      setShowCardanoModal(true);
     }
+  };
+
+  const handleStripeSuccess = () => {
+    // This function is called when Stripe payment is successful
+    setShowStripeModal(false);
+    toast.success(`Thank you for your donation of A${totalAmount.toFixed(2)}!`);
+    onClose();
   };
 
   const handleCardanoSuccess = () => {
@@ -66,9 +68,9 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
 
   const totalAmount = parseFloat(donationAmount || "0") + parseFloat(tipAmount || "0");
 
-  // Convert AUD to ADA for Cardano payments (mock conversion rate 1 AUD = 0.75 ADA)
+  // Get ADA amount using the hook's conversion function
   const getAdaAmount = () => {
-    return totalAmount * 0.75;
+    return usdToAda(totalAmount);
   };
 
   return (
@@ -98,7 +100,7 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
             {/* Donation Amount */}
             <div>
               <Label htmlFor="amount" className="text-base font-semibold">
-                Donation Amount (AUD)
+                Donation Amount (USD)
               </Label>
               <div className="grid grid-cols-3 gap-2 mt-2 mb-4">
                 {predefinedAmounts.map((amount) => (
@@ -108,7 +110,7 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
                     onClick={() => setDonationAmount(amount.toString())}
                     className="h-12"
                   >
-                    A{amount}
+                    ${amount}
                   </Button>
                 ))}
               </div>
@@ -136,19 +138,19 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
               <RadioGroup value={tipAmount} onValueChange={setTipAmount} className="flex space-x-4">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="0" id="tip-0" />
-                  <Label htmlFor="tip-0">A0</Label>
+                  <Label htmlFor="tip-0">$0</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="5" id="tip-5" />
-                  <Label htmlFor="tip-5">A5</Label>
+                  <Label htmlFor="tip-5">$5</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="10" id="tip-10" />
-                  <Label htmlFor="tip-10">A10</Label>
+                  <Label htmlFor="tip-10">$10</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="15" id="tip-15" />
-                  <Label htmlFor="tip-15">A15</Label>
+                  <Label htmlFor="tip-15">$15</Label>
                 </div>
               </RadioGroup>
             </div>
@@ -191,7 +193,7 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
                     </p>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Conversion Rate:</span>
-                      <span className="font-medium">1 AUD ≈ 0.75 ADA</span>
+                      <span className="font-medium">1 ADA ≈ 0.70 USD</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">Amount in ADA:</span>
@@ -218,17 +220,17 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex justify-between items-center mb-2">
                 <span>Donation Amount:</span>
-                <span className="font-semibold">A{donationAmount || "0"}</span>
+                <span className="font-semibold">${donationAmount || "0"}</span>
               </div>
               {parseFloat(tipAmount) > 0 && (
                 <div className="flex justify-between items-center mb-2">
                   <span>Platform Tip:</span>
-                  <span className="font-semibold">A{tipAmount}</span>
+                  <span className="font-semibold">${tipAmount}</span>
                 </div>
               )}
               <div className="border-t pt-2 flex justify-between items-center">
                 <span className="font-semibold">Total:</span>
-                <span className="font-bold text-lg">A{totalAmount.toFixed(2)}</span>
+                <span className="font-bold text-lg">${totalAmount.toFixed(2)}</span>
               </div>
             </div>
 
@@ -244,7 +246,7 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
               >
                 {isProcessing ? "Processing..." : paymentMethod === "crypto" 
                   ? `Donate ${getAdaAmount().toFixed(2)} ADA` 
-                  : `Donate A${totalAmount.toFixed(2)}`}
+                  : `Donate $${totalAmount.toFixed(2)}`}
               </Button>
             </div>
 
@@ -266,6 +268,17 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
           recipientAddress={campaignCardanoAddress}
           onClose={() => setShowCardanoModal(false)}
           onSuccess={handleCardanoSuccess}
+        />
+      )}
+
+      {/* Stripe Payment Modal */}
+      {showStripeModal && (
+        <StripePaymentModal 
+          amount={totalAmount}
+          campaignTitle={campaign.title}
+          currency="usd"
+          onClose={() => setShowStripeModal(false)}
+          onSuccess={handleStripeSuccess}
         />
       )}
     </>

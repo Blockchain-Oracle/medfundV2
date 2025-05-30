@@ -51,13 +51,14 @@ export const CardanoService = {
   },
 
   /**
-   * Convert AUD to ADA based on a fixed exchange rate
-   * @param audAmount Amount in AUD
-   * @param exchangeRate Exchange rate (default: 0.75 ADA per AUD)
+   * Convert USD to ADA based on a fixed exchange rate
+   * @param usdAmount Amount in USD
+   * @param exchangeRate Exchange rate (default: 0.70 USD per 1 ADA)
    * @returns Amount in ADA
    */
-  convertAudToAda(audAmount: number, exchangeRate: number = 0.75): number {
-    return audAmount * exchangeRate;
+  convertUsdToAda(usdAmount: number, exchangeRate: number = 0.70): number {
+    // Since 1 ADA = 0.70 USD, to get ADA amount we divide USD by exchange rate
+    return usdAmount / exchangeRate;
   },
 
   /**

@@ -133,6 +133,10 @@ export const CardanoPaymentModal = ({
               <span className="font-medium">{amount.toFixed(2)} ADA</span>
             </div>
             <div className="flex justify-between mb-1 text-sm text-gray-500">
+              <span>USD Equivalent:</span>
+              <span>${(amount * 0.70).toFixed(2)} USD</span>
+            </div>
+            <div className="flex justify-between mb-1 text-sm text-gray-500">
               <span>Network Fee:</span>
               <span>~{estimatedFee} ADA</span>
             </div>

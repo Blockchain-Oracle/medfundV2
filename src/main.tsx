@@ -21,6 +21,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           accentColor: "#3b82f6",
           logo: "/images/MedFund_Logo.png",
         },
+        embeddedWallets: {
+          createOnLogin: "users-without-wallets"
+        }
       }}
     >
       <CardanoWalletProvider>

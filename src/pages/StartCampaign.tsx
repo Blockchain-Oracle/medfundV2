@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle } from "lucide-react";
+import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle, X, File } from "lucide-react";
 import { toast } from "sonner";
 
 const StartCampaign = () => {
@@ -44,6 +45,43 @@ const StartCampaign = () => {
   };
 
   const progressPercentage = (currentStep / 4) * 100;
+
+  // Dropzone implementation
+  const onDrop = useCallback((acceptedFiles) => {
+    // Show success toast for upload
+    toast.success(`${acceptedFiles.length} file(s) added`);
+    
+    // Update form data with the new files
+    setFormData(prevData => ({
+      ...prevData,
+      documents: [
+        ...prevData.documents,
+        ...acceptedFiles.map(file => 
+          Object.assign(file, {
+            preview: URL.createObjectURL(file)
+          })
+        )
+      ]
+    }));
+  }, []);
+
+  const removeFile = (fileIndex) => {
+    setFormData(prevData => ({
+      ...prevData,
+      documents: prevData.documents.filter((_, index) => index !== fileIndex)
+    }));
+    toast.info("File removed");
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png']
+    },
+    maxSize: 10485760, // 10MB
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 relative overflow-hidden">
@@ -135,7 +173,7 @@ const StartCampaign = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="goal">Fundraising Goal (AUD)</Label>
+                    <Label htmlFor="goal">Fundraising Goal (ADA)</Label>
                     <Input
                       id="goal"
                       type="number"
@@ -251,19 +289,66 @@ const StartCampaign = () => {
                     </ul>
                   </div>
                   
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <div 
+                    {...getRootProps()} 
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      isDragActive 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input {...getInputProps()} />
                     <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Upload Medical Documents</h3>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                      {isDragActive ? 'Drop files here' : 'Upload Medical Documents'}
+                    </h3>
                     <p className="text-gray-500 mb-4">
-                      Drag and drop files here, or click to select files
+                      {isDragActive 
+                        ? 'Drop your files here...' 
+                        : 'Drag and drop files here, or click to select files'}
                     </p>
-                    <Button variant="outline">
+                    <Button type="button" variant="outline">
                       Choose Files
                     </Button>
                     <p className="text-xs text-gray-400 mt-2">
                       Supported formats: PDF, JPG, PNG (Max 10MB each)
                     </p>
                   </div>
+
+                  {/* Display uploaded files */}
+                  {formData.documents.length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="font-medium mb-3">Uploaded Documents ({formData.documents.length})</h4>
+                      <div className="space-y-2">
+                        {formData.documents.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+                            <div className="flex items-center">
+                              <File className="h-5 w-5 text-blue-600 mr-2" />
+                              <div>
+                                <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-[300px]">
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFile(index);
+                              }}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

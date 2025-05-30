@@ -65,9 +65,9 @@ export function useCardano() {
     }
   };
 
-  // Convert AUD to ADA
-  const audToAda = (audAmount: number) => {
-    return CardanoService.convertAudToAda(audAmount);
+  // Convert USD to ADA
+  const usdToAda = (usdAmount: number) => {
+    return CardanoService.convertUsdToAda(usdAmount);
   };
 
   // Check if wallet has enough ADA
@@ -84,7 +84,7 @@ export function useCardano() {
     loading,
     updateBalance,
     sendAda,
-    audToAda,
+    usdToAda,
     hasEnoughAda,
     estimatedFee: CardanoService.getEstimatedFee(),
   };

@@ -1,11 +1,22 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Activity, FileText, CreditCard, Shield, Heart, LogOut, User } from "lucide-react";
+import { Activity, FileText, CreditCard, Shield, Heart, LogOut, User, Settings, UserCircle, Loader2 } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from "react";
+import MD5 from "crypto-js/md5";
 
 export const Header = () => {
   const location = useLocation();
   const { login, logout, authenticated, user, ready } = usePrivy();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Determine if we're in a dashboard/internal page (light theme) or external page (dark theme)
   const isInternalPage = location.pathname.includes("/dashboard") || 
@@ -16,11 +27,77 @@ export const Header = () => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  // Get user profile info
-  const userAvatarUrl = user?.wallet?.address 
-    ? `https://effigy.im/a/${user.wallet.address}.svg` // Fallback to blockchain avatar
-    : null;
-  const userDisplayName = user?.email?.address || "User";
+  // Get user profile info from social logins
+  const getProfileInfo = () => {
+    if (!user) return { avatarUrl: null, displayName: "User" };
+
+    let avatarUrl = null;
+    let displayName = "User";
+
+    // Get info from Google account
+    if (user.google?.name) {
+      displayName = user.google.name;
+      // Generate Gravatar URL from email
+      if (user.google.email) {
+        const emailHash = MD5(user.google.email.trim().toLowerCase()).toString();
+        avatarUrl = `https://www.gravatar.com/avatar/${emailHash}?d=identicon&s=200`;
+      }
+    } 
+    // Fallback to linked accounts
+    else if (user.linkedAccounts && user.linkedAccounts.length > 0) {
+      for (const account of user.linkedAccounts) {
+        if (account.type === "google_oauth" && account.name) {
+          displayName = account.name;
+          // Generate Gravatar URL from email
+          if (account.email) {
+            const emailHash = MD5(account.email.trim().toLowerCase()).toString();
+            avatarUrl = `https://www.gravatar.com/avatar/${emailHash}?d=identicon&s=200`;
+          }
+          break;
+        } else if (account.type === "twitter_oauth" && account.name) {
+          displayName = account.name;
+          break;
+        }
+      }
+    }
+
+    // Fallbacks
+    if (!avatarUrl && user.wallet?.address) {
+      // Fallback to blockchain avatar
+      avatarUrl = `https://effigy.im/a/${user.wallet.address}.svg`;
+    }
+
+    if (displayName === "User" && user.email?.address) {
+      displayName = user.email.address.split('@')[0];
+      
+      // If we have an email but no avatar yet, use Gravatar
+      if (!avatarUrl) {
+        const emailHash = MD5(user.email.address.trim().toLowerCase()).toString();
+        avatarUrl = `https://www.gravatar.com/avatar/${emailHash}?d=identicon&s=200`;
+      }
+    }
+
+    return { avatarUrl, displayName };
+  };
+
+  const { avatarUrl, displayName } = getProfileInfo();
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      // You might want to navigate to home or login page here
+    } catch (error) {
+      console.error("Error logging out:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  // Handle login
+  const handleLogin = () => {
+    login();
+  };
 
   return (
     <header className={`${isInternalPage ? "bg-white shadow-lg border-b" : "bg-gray-900/90 backdrop-blur-sm border-b border-white/10"}`}>
@@ -100,28 +177,6 @@ export const Header = () => {
                     Medical Records
                   </Button>
                 </Link>
-                
-                <Button 
-                  variant="ghost" 
-                  className={isInternalPage
-                    ? "text-gray-700 hover:bg-gray-100" 
-                    : "text-white hover:bg-white/10"
-                  }
-                >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Payment
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  className={isInternalPage
-                    ? "text-gray-700 hover:bg-gray-100" 
-                    : "text-white hover:bg-white/10"
-                  }
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Identity
-                </Button>
               </>
             )}
           </div>
@@ -129,39 +184,82 @@ export const Header = () => {
           <div className="flex items-center space-x-4">
             {ready ? (
               authenticated ? (
-                <>
-                  <div className={`flex items-center space-x-3 ${isInternalPage ? "bg-gray-50" : "bg-white/10"} px-4 py-2 rounded-lg`}>
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      {userAvatarUrl ? (
-                        <img src={userAvatarUrl} alt="Profile" className="w-8 h-8 rounded-full" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className={`flex items-center space-x-3 ${isInternalPage ? "bg-gray-50 hover:bg-gray-100" : "bg-white/10 hover:bg-white/20"} px-4 py-2 rounded-lg transition-colors`}>
+                      <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-blue-100">
+                        {avatarUrl ? (
+                          <img 
+                            src={avatarUrl} 
+                            alt="Profile" 
+                            className="w-8 h-8 object-cover"
+                            onError={(e) => {
+                              // If image fails to load, replace with user icon
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.style.display = 'none';
+                              const parent = e.currentTarget.parentElement;
+                              if (parent) {
+                                const iconEl = document.createElement('div');
+                                iconEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-600"><path d="M18 20a6 6 0 0 0-12 0"></path><circle cx="12" cy="10" r="4"></circle></svg>';
+                                parent.appendChild(iconEl.firstChild as Node);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <UserCircle className="w-5 h-5 text-blue-600" />
+                        )}
+                      </div>
+                      <span className={`${isInternalPage ? "text-gray-700" : "text-white"} font-medium truncate max-w-[100px]`}>
+                        {displayName}
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/dashboard" className="cursor-pointer flex w-full items-center">
+                        <Activity className="w-4 h-4 mr-2" />
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/medical-records" className="cursor-pointer flex w-full items-center">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Medical Records
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                    >
+                      {isLoggingOut ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Logging out...
+                        </>
                       ) : (
-                        <User className="w-4 h-4 text-blue-600" />
+                        <>
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Logout
+                        </>
                       )}
-                    </div>
-                    <span className={isInternalPage ? "text-gray-700" : "text-white"}>
-                      {userDisplayName}
-                    </span>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => logout()} 
-                    className={isInternalPage ? "text-gray-600 hover:text-gray-800 border-gray-300" : "text-white border-white/20 hover:bg-white/10"}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </Button>
-                </>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <>
                   <Button 
                     variant="outline" 
-                    onClick={() => login()} 
+                    onClick={handleLogin} 
                     className={isInternalPage ? "text-gray-600 hover:text-gray-800 border-gray-300" : "text-white border-white/20 hover:bg-white/10"}
                   >
                     Login
                   </Button>
                   <Button 
-                    onClick={() => login()} 
+                    onClick={handleLogin} 
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     Register
@@ -170,7 +268,10 @@ export const Header = () => {
               )
             ) : (
               // Loading state
-              <Button disabled variant="outline">Loading...</Button>
+              <Button disabled variant="outline" className="flex items-center">
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Loading...
+              </Button>
             )}
           </div>
         </nav>
