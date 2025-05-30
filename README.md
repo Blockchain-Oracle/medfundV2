@@ -1,82 +1,55 @@
-# Welcome to your Lovable project
+# MedFund: Hopeful Funds Platform
 
-## Project info
+A decentralized medical crowdfunding platform built on Cardano blockchain and Stripe payment integration. MedFund connects patients in need with donors to fund healthcare costs through transparent and secure donations.
 
-**URL**: https://lovable.dev/projects/d971f8ae-777b-4866-80f3-878d4cdf49b6
+## 🌟 Features
 
-## How can I edit this code?
+- **Medical Fundraising Campaigns**: Create and manage healthcare funding campaigns
+- **Dual Payment Options**: Support with traditional payments (Stripe) or cryptocurrency (Cardano)
+- **Transparent Fund Management**: Track all donations and disbursements on the blockchain
+- **Secure Medical Verification**: Confidential verification of medical needs
+- **User-friendly Dashboard**: Intuitive interface for campaign creators and donors
 
-There are several ways of editing your application.
+## 🚀 Tech Stack
 
-**Use Lovable**
+- **Frontend**: React, TypeScript, Vite
+- **UI**: TailwindCSS, shadcn/ui components
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: Privy
+- **Payments**: 
+  - Fiat: Stripe API integration
+  - Crypto: Cardano blockchain integration
+- **Deployment**: [Lovable](https://lovable.dev/projects/d971f8ae-777b-4866-80f3-878d4cdf49b6)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d971f8ae-777b-4866-80f3-878d4cdf49b6) and start prompting.
+## 💻 Development Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js & npm - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- PostgreSQL database
+- Stripe account (for testing payments)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
+cd hopeful-funds-platform
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies (using pnpm)
+pnpm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Copy environment variables and configure
+cp .env.example .env
+# Update .env with your credentials
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Start development server
+pnpm dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d971f8ae-777b-4866-80f3-878d4cdf49b6) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-
-## Database Setup
+### Database Setup
 
 This project uses Drizzle ORM with PostgreSQL for database management.
-
-### Setup Instructions
 
 1. Create a PostgreSQL database
 ```sh
@@ -87,28 +60,37 @@ createdb medfund
 CREATE DATABASE medfund;
 ```
 
-2. Copy the environment variables
-```sh
-cp .env.example .env
-```
-
-3. Update the `.env` file with your database credentials
-
-4. Generate and apply migrations
+2. Generate and apply migrations
 ```sh
 # Generate migration files
 pnpm db:generate
 
 # Apply migrations to your database
 pnpm db:migrate
-```
 
-5. View and manage your database with Drizzle Studio
-```sh
+# View and manage your database with Drizzle Studio
 pnpm db:studio
 ```
 
-## Database Schema
+## 💳 Payment Integration
+
+### Stripe Integration (Fiat Currency)
+
+The platform uses Stripe for processing traditional currency payments:
+
+- Test mode enabled for development with test API keys
+- Real credit card processing in test environment
+- API endpoints for payment intents, confirmations, and status checks
+
+### Cardano Integration (Cryptocurrency)
+
+Future implementation will support Cardano blockchain for:
+
+- Cryptocurrency donations
+- Transparent fund tracking
+- Smart contract disbursements
+
+## 📊 Database Schema
 
 The database schema consists of the following tables:
 
@@ -119,3 +101,19 @@ The database schema consists of the following tables:
 - `payment_methods` - User payment information
 
 See the [Database Schema](./src/lib/db/schema/) directory for detailed table definitions.
+
+## 🚢 Deployment
+
+The project can be deployed through the Lovable platform:
+
+1. Visit [Lovable Project](https://lovable.dev/projects/d971f8ae-777b-4866-80f3-878d4cdf49b6)
+2. Click on Share -> Publish
+3. For custom domains, navigate to Project > Settings > Domains
+
+## 👥 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
