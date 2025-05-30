@@ -41,11 +41,6 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
         // Simulate Stripe payment processing
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // In a real implementation, you would:
-        // 1. Call your backend to create a Stripe payment intent
-        // 2. Use Stripe.js to handle the payment
-        // 3. Redirect to Stripe Checkout or use Stripe Elements
-        
         toast.success(`Thank you for your $${donationAmount} donation!`);
         onClose();
       } else if (paymentMethod === "crypto") {
@@ -190,7 +185,7 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
             <Checkbox
               id="anonymous"
               checked={anonymous}
-              onCheckedChange={setAnonymous}
+              onCheckedChange={(checked) => setAnonymous(checked === true)}
             />
             <Label htmlFor="anonymous" className="text-sm">
               Make this donation anonymous

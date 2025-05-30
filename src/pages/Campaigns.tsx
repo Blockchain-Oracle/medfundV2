@@ -7,14 +7,14 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Heart, Search, Filter, ArrowLeft } from "lucide-react";
+import { Heart, Search, Filter, ArrowLeft, MapPin, Clock, Users } from "lucide-react";
 
 const Campaigns = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [filterBy, setFilterBy] = useState("all");
 
-  // Mock campaigns data
+  // Mock campaigns data with images
   const campaigns = [
     {
       id: 1,
@@ -25,7 +25,9 @@ const Campaigns = () => {
       urgent: true,
       category: "surgery",
       daysLeft: 15,
-      donors: 234
+      donors: 234,
+      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
+      location: "Sydney, NSW"
     },
     {
       id: 2,
@@ -36,7 +38,9 @@ const Campaigns = () => {
       urgent: false,
       category: "treatment",
       daysLeft: 45,
-      donors: 156
+      donors: 156,
+      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop",
+      location: "Melbourne, VIC"
     },
     {
       id: 3,
@@ -47,7 +51,9 @@ const Campaigns = () => {
       urgent: true,
       category: "surgery",
       daysLeft: 8,
-      donors: 89
+      donors: 89,
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop",
+      location: "Brisbane, QLD"
     },
     {
       id: 4,
@@ -58,7 +64,9 @@ const Campaigns = () => {
       urgent: false,
       category: "treatment",
       daysLeft: 30,
-      donors: 67
+      donors: 67,
+      image: "https://images.unsplash.com/photo-1500673922987-e212871fec22?w=400&h=300&fit=crop",
+      location: "Perth, WA"
     },
     {
       id: 5,
@@ -69,7 +77,9 @@ const Campaigns = () => {
       urgent: false,
       category: "therapy",
       daysLeft: 60,
-      donors: 43
+      donors: 43,
+      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&h=300&fit=crop",
+      location: "Adelaide, SA"
     },
     {
       id: 6,
@@ -80,7 +90,9 @@ const Campaigns = () => {
       urgent: true,
       category: "emergency",
       daysLeft: 20,
-      donors: 312
+      donors: 312,
+      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
+      location: "Darwin, NT"
     }
   ];
 
@@ -192,31 +204,54 @@ const Campaigns = () => {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCampaigns.map((campaign) => (
-              <Card key={campaign.id} className="bg-white/95 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-gray-800 text-lg">{campaign.title}</CardTitle>
+              <Card key={campaign.id} className="bg-white/95 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
+                {/* Campaign Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <img 
+                    src={campaign.image} 
+                    alt={campaign.title}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  />
+                  <div className="absolute top-4 left-4 flex gap-2">
                     {campaign.urgent && <Badge variant="destructive">Urgent</Badge>}
+                    <Badge variant="secondary" className="bg-white/90 text-gray-800">
+                      {campaign.category}
+                    </Badge>
                   </div>
-                  <CardDescription className="text-gray-600">
+                </div>
+
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-gray-800 text-lg line-clamp-2">{campaign.title}</CardTitle>
+                  <div className="flex items-center text-sm text-gray-500 mt-2">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {campaign.location}
+                  </div>
+                  <CardDescription className="text-gray-600 line-clamp-2 mt-2">
                     {campaign.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                
+                <CardContent className="pt-0">
                   <div className="space-y-4">
-                    <Progress value={(campaign.raised / campaign.goal) * 100} className="h-3" />
+                    <Progress value={(campaign.raised / campaign.goal) * 100} className="h-2" />
                     
                     <div className="flex justify-between text-sm">
                       <span className="font-semibold">A{campaign.raised.toLocaleString()} raised</span>
                       <span className="text-gray-600">A{campaign.goal.toLocaleString()} goal</span>
                     </div>
                     
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>{campaign.donors} donors</span>
-                      <span>{campaign.daysLeft} days left</span>
+                    <div className="flex justify-between items-center text-sm text-gray-600">
+                      <div className="flex items-center">
+                        <Users className="h-4 w-4 mr-1" />
+                        {campaign.donors} donors
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1" />
+                        {campaign.daysLeft} days left
+                      </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2">
                       <Link to={`/campaign/${campaign.id}`} className="flex-1">
                         <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                           View Campaign
