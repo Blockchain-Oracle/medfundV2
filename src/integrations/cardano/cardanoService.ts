@@ -1,7 +1,7 @@
 import { Transaction, ForgeScript, resolvePaymentKeyHash } from '@meshsdk/core';
 
 // Default testnet recipient address - should be replaced with actual campaign wallet addresses
-export const DEFAULT_RECIPIENT_ADDRESS = "addr_test1qp9yfvry9vmwjmxjlzkcxyl7xnflwhvn3gm9q5fxpw6lx6w8j37xclznqcw2j0m62h0mqmufya6jknvw5nutvs7a5c4s4m3wlh";
+export const DEFAULT_RECIPIENT_ADDRESS = "addr_test1qqfpkkpkhhlrd9ve0smzjphc09hafcmgj74k5sskxz6sxxc0uufz0d0k8h4sfgfwh9v6tgtxea806qw7dmeg4c8yqtdstcyu88";
 
 /**
  * Service for interacting with the Cardano blockchain
@@ -19,11 +19,19 @@ export const CardanoService = {
     recipientAddress: string,
     lovelaceAmount: number | string
   ): Promise<string> {
+    // Ensure lovelaceAmount is an integer
+    const amount = typeof lovelaceAmount === 'number' 
+      ? Math.floor(lovelaceAmount).toString()
+      : lovelaceAmount;
+      
+    console.log(`Sending ${amount} lovelace to ${recipientAddress}`);
+    
     // Create transaction
     const tx = new Transaction({ initiator: wallet })
+      .setNetwork("preview") // Explicitly set to use preview network
       .sendLovelace(
-        recipientAddress,
-        lovelaceAmount.toString()
+        DEFAULT_RECIPIENT_ADDRESS, // Use the provided recipient address
+        amount
       );
 
     // Build, sign and submit transaction

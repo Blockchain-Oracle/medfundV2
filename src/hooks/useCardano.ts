@@ -43,8 +43,10 @@ export function useCardano() {
 
     setLoading(true);
     try {
-      // Convert ADA to lovelace
-      const lovelaceAmount = amount * 1_000_000;
+      // Convert ADA to lovelace and ensure it's an integer
+      const lovelaceAmount = Math.floor(amount * 1_000_000);
+      
+      console.log(`Converting ${amount} ADA to ${lovelaceAmount} lovelace`);
       
       // Send the transaction
       const txHash = await CardanoService.sendAda(

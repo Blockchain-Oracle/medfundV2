@@ -35,6 +35,13 @@ export const CardanoPaymentModal = ({
     try {
       setPaymentStatus('preparing');
 
+      // Verify the address is properly formatted for the Preview network
+      if (!recipientAddress.startsWith('addr_test')) {
+        toast.error('Invalid recipient address format for Preview network');
+        setPaymentStatus('error');
+        return;
+      }
+
       // Check if wallet has enough balance
       const hasEnough = await hasEnoughAda(amount + estimatedFee);
       if (!hasEnough) {
@@ -123,6 +130,13 @@ export const CardanoPaymentModal = ({
                 <CardanoWallet />
               </div>
             )}
+          </div>
+
+          {/* Network Information */}
+          <div className="rounded-lg p-2 bg-purple-50 text-center">
+            <span className="text-xs text-purple-700">
+              Connected to <strong>Preview Network</strong> (Cardano Testnet)
+            </span>
           </div>
 
           {/* Donation Summary */}

@@ -72,6 +72,37 @@ pnpm db:migrate
 pnpm db:studio
 ```
 
+### Docker Setup
+
+Alternatively, you can use Docker to run the PostgreSQL database:
+
+1. Start the PostgreSQL database and pgAdmin:
+```sh
+# Start containers in detached mode
+docker-compose up -d
+
+# View container logs
+docker-compose logs -f
+```
+
+2. Access the database:
+   - PostgreSQL is available at `localhost:5432`
+   - Default credentials: `postgres:postgres`
+   - Database name: `medfund`
+
+3. Access pgAdmin (optional):
+   - Open `http://localhost:5050` in your browser
+   - Login with: `admin@medfund.com` / `admin`
+   - Connect to the PostgreSQL server using:
+     - Host: `postgres`
+     - Username: `postgres`
+     - Password: `postgres`
+
+4. Stop the containers:
+```sh
+docker-compose down
+```
+
 ## 💳 Payment Integration
 
 ### Stripe Integration (Fiat Currency)
