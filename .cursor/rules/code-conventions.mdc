@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Code Conventions for MedFund
+
+## TypeScript Conventions
+
+- Use TypeScript for type safety
+- Define interfaces for all data structures
+- Use type inference where appropriate
+- Prefer readonly properties for immutable data
+
+## React Conventions
+
+- Use functional components with hooks
+- Organize components in a logical folder structure
+- Use React Router for navigation
+- Apply shadcn/ui components for UI consistency
+
+## Database/ORM Conventions
+
+- Use Drizzle ORM for database operations
+- Define schemas in dedicated schema files
+- Use relations correctly for related data
+- Implement proper error handling for database operations
+
+## File Structure
+
+- `/src/lib/db` - Database related files (schema, migrations, client)
+- `/src/components` - React components
+- `/src/pages` - Main application pages
+- `/src/hooks` - Custom React hooks
+- `/src/integrations` - Third-party integrations

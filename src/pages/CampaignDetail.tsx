@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -75,34 +74,6 @@ The funds will be used for:
       {/* Grid Pattern Background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       
-      {/* Header */}
-      <header className="relative z-10 bg-gray-900/90 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold text-white">MedFund</span>
-            </Link>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/campaigns" className="text-white hover:text-blue-300 transition-colors">Campaigns</Link>
-              <Link to="/start-campaign" className="text-white hover:text-blue-300 transition-colors">Start Campaign</Link>
-              <span className="text-white hover:text-blue-300 transition-colors">Governance</span>
-              <span className="text-white hover:text-blue-300 transition-colors">Rewards</span>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" className="text-white border-white/20 hover:bg-white/10">
-                Login
-              </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                Register
-              </Button>
-            </div>
-          </nav>
-        </div>
-      </header>
-
       {/* Page Content */}
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="flex items-center space-x-4 mb-6">

@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Database Schema for MedFund
+
+Based on the application's features, we need a database schema that supports:
+
+## Core Entities
+
+1. **Users** - Platform users (patients, donors, etc.)
+2. **Campaigns** - Medical fundraising campaigns
+3. **Donations** - Donations made to campaigns
+4. **Medical Records** - Medical documentation and history
+5. **Payment Methods** - User payment information
+
+## Database Structure
+
+The application is transitioning from Supabase to Drizzle ORM. The schema should reflect these entities with proper relationships:
+
+- Users can create multiple campaigns
+- Users can make multiple donations to campaigns
+- Users can have multiple medical records
+- Users can have multiple payment methods
+- Campaigns receive multiple donations
+- Campaigns have status tracking
+
+## Drizzle Implementation
+
+Implementation tasks:
+1. Define schema in TypeScript using Drizzle's schema builder
+2. Set up proper relations between tables
+3. Create migrations
+4. Implement queries with Drizzle's query builder

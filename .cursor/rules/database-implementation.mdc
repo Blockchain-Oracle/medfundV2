@@ -1,0 +1,39 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Database Implementation Guide
+
+## Database Structure
+
+The MedFund application uses Drizzle ORM with PostgreSQL. The schema is defined in TypeScript files located in [src/lib/db/schema](mdc:src/lib/db/schema/index.ts).
+
+## Main Database Components
+
+1. **Database Client**: [src/lib/db/index.ts](mdc:src/lib/db/index.ts)
+   - Provides connection to PostgreSQL
+   - Exports `db` instance for queries
+   - Exports `getDb()` function for single-use connections
+
+2. **Database Schema**: 
+   - [Users Schema](mdc:src/lib/db/schema/users.ts)
+   - [Campaigns Schema](mdc:src/lib/db/schema/campaigns.ts)
+   - [Donations Schema](mdc:src/lib/db/schema/donations.ts)
+   - [Medical Records Schema](mdc:src/lib/db/schema/medicalRecords.ts)
+   - [Payment Methods Schema](mdc:src/lib/db/schema/paymentMethods.ts)
+
+3. **Database Helpers**: [src/lib/db/helpers.ts](mdc:src/lib/db/helpers.ts)
+   - Functions for common database operations
+   - Typed methods for each entity
+
+4. **Migration Tools**:
+   - [Migration Script](mdc:src/lib/db/migrate.ts)
+   - Migration files in [src/lib/db/migrations](mdc:src/lib/db/migrations)
+
+## Development Workflow
+
+1. Modify schema files when needed
+2. Run `pnpm db:generate` to generate migration files
+3. Run `pnpm db:migrate` to apply migrations to the database
+4. Use `pnpm db:studio` to view and manage database through Drizzle Studio

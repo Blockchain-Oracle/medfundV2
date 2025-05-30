@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ const Campaigns = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [filterBy, setFilterBy] = useState("all");
 
-  // Mock campaigns data with images
+  // Update the mock campaigns data with actual image paths
   const campaigns = [
     {
       id: 1,
@@ -26,7 +25,7 @@ const Campaigns = () => {
       category: "surgery",
       daysLeft: 15,
       donors: 234,
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
+      image: "/images/campaign1.jpeg",
       location: "Sydney, NSW"
     },
     {
@@ -39,7 +38,7 @@ const Campaigns = () => {
       category: "treatment",
       daysLeft: 45,
       donors: 156,
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400&h=300&fit=crop",
+      image: "/images/campaign2.jpg",
       location: "Melbourne, VIC"
     },
     {
@@ -52,7 +51,7 @@ const Campaigns = () => {
       category: "surgery",
       daysLeft: 8,
       donors: 89,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop",
+      image: "/images/campaign3.jpg",
       location: "Brisbane, QLD"
     },
     {
@@ -65,7 +64,7 @@ const Campaigns = () => {
       category: "treatment",
       daysLeft: 30,
       donors: 67,
-      image: "https://images.unsplash.com/photo-1500673922987-e212871fec22?w=400&h=300&fit=crop",
+      image: "/images/campaign4.jpg",
       location: "Perth, WA"
     },
     {
@@ -112,34 +111,6 @@ const Campaigns = () => {
       {/* Grid Pattern Background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       
-      {/* Header */}
-      <header className="relative z-10 bg-gray-900/90 backdrop-blur-sm border-b border-white/10">
-        <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold text-white">MedFund</span>
-            </Link>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/campaigns" className="text-blue-300 font-semibold">Campaigns</Link>
-              <Link to="/start-campaign" className="text-white hover:text-blue-300 transition-colors">Start Campaign</Link>
-              <span className="text-white hover:text-blue-300 transition-colors">Governance</span>
-              <span className="text-white hover:text-blue-300 transition-colors">Rewards</span>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" className="text-white border-white/20 hover:bg-white/10">
-                Login
-              </Button>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                Register
-              </Button>
-            </div>
-          </nav>
-        </div>
-      </header>
-
       {/* Page Header */}
       <section className="relative z-10 py-12 bg-white/5 backdrop-blur-sm">
         <div className="container mx-auto px-4">

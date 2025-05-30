@@ -71,3 +71,51 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Database Setup
+
+This project uses Drizzle ORM with PostgreSQL for database management.
+
+### Setup Instructions
+
+1. Create a PostgreSQL database
+```sh
+# Using psql
+createdb medfund
+
+# Or inside PostgreSQL
+CREATE DATABASE medfund;
+```
+
+2. Copy the environment variables
+```sh
+cp .env.example .env
+```
+
+3. Update the `.env` file with your database credentials
+
+4. Generate and apply migrations
+```sh
+# Generate migration files
+pnpm db:generate
+
+# Apply migrations to your database
+pnpm db:migrate
+```
+
+5. View and manage your database with Drizzle Studio
+```sh
+pnpm db:studio
+```
+
+## Database Schema
+
+The database schema consists of the following tables:
+
+- `users` - Platform users (patients, donors, etc.)
+- `campaigns` - Medical fundraising campaigns
+- `donations` - Donations made to campaigns
+- `medical_records` - Medical documentation and history
+- `payment_methods` - User payment information
+
+See the [Database Schema](./src/lib/db/schema/) directory for detailed table definitions.

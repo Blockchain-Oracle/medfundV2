@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,45 +7,6 @@ import { Link } from "react-router-dom";
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg mr-3">
-                <Heart className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">MedFund</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Link to="/campaigns">
-                <Button variant="ghost" className="hover:bg-blue-50 text-gray-700">
-                  <Heart className="w-4 h-4 mr-2" />
-                  Browse Campaigns
-                </Button>
-              </Link>
-              <Link to="/dashboard">
-                <Button variant="ghost" className="hover:bg-blue-50 text-gray-700">
-                  <Activity className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Link to="/medical-records">
-                <Button variant="ghost" className="hover:bg-blue-50 text-gray-700">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Medical Records
-                </Button>
-              </Link>
-              <Link to="/start-campaign">
-                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg">
-                  Start Campaign
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
