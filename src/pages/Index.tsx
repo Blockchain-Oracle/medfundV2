@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, Shield, Users, TrendingUp, Star, MapPin, Calendar, Target } from "lucide-react";
+import { Heart, Shield, Users, TrendingUp, Star, MapPin, Calendar, Target, Activity, FileText, CreditCard } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -12,18 +13,34 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <Heart className="h-8 w-8 text-red-500 mr-2" />
-              <span className="text-xl font-bold text-gray-900">MedFund</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg mr-3">
+                <Heart className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">MedFund</span>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
               <Link to="/campaigns">
-                <Button variant="ghost">Browse Campaigns</Button>
+                <Button variant="ghost" className="hover:bg-blue-50 text-gray-700">
+                  <Heart className="w-4 h-4 mr-2" />
+                  Browse Campaigns
+                </Button>
               </Link>
               <Link to="/dashboard">
-                <Button variant="ghost">Dashboard</Button>
+                <Button variant="ghost" className="hover:bg-blue-50 text-gray-700">
+                  <Activity className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Link to="/medical-records">
+                <Button variant="ghost" className="hover:bg-blue-50 text-gray-700">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Medical Records
+                </Button>
               </Link>
               <Link to="/start-campaign">
-                <Button>Start Campaign</Button>
+                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg">
+                  Start Campaign
+                </Button>
               </Link>
             </div>
           </div>
@@ -33,17 +50,17 @@ const Index = () => {
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-8 bg-gradient-to-br from-blue-50 to-indigo-100 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+          <div className="relative z-10 pb-8 bg-gradient-to-br from-blue-50 to-indigo-100 sm:pb-16 md:pb-20 lg:pb-28 xl:pb-32">
             <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-              <div className="sm:text-center lg:text-left">
+              <div className="text-center">
                 <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
                   <span className="block xl:inline">Transparent</span>{' '}
                   <span className="block text-blue-600 xl:inline">Medical Fundraising</span>
                 </h1>
-                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl">
                   Connect patients with donors through our secure, KYC-verified platform. Every donation is tracked, every story is verified, and every contribution makes a difference.
                 </p>
-                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
+                <div className="mt-5 sm:mt-8 sm:flex sm:justify-center">
                   <div className="rounded-md shadow">
                     <Link to="/campaigns">
                       <Button className="w-full flex items-center justify-center px-8 py-3 text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
@@ -62,13 +79,6 @@ const Index = () => {
               </div>
             </main>
           </div>
-        </div>
-        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-          <img
-            className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
-            src="/lovable-uploads/c8f6df5b-72d3-4b7c-8838-1e28d2c229d1.png"
-            alt="Medical fundraising"
-          />
         </div>
       </div>
 
