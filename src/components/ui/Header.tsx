@@ -104,8 +104,8 @@ export const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <nav className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/images/MedFund_Logo.png" alt="MedFund Logo" className="h-8 w-8" />
-            <span className={`text-2xl font-bold ${isInternalPage ? "bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent" : "text-white"}`}>MedFund</span>
+            <img src="/images/MedFund_Logo.png" alt="MedFund Logo"  className="h-10 w-15" />
+            {/* <span className={`text-2xl font-bold ${isInternalPage ? "bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent" : "text-white"}`}></span> */}
           </Link>
           
           <div className="hidden md:flex items-center space-x-2">

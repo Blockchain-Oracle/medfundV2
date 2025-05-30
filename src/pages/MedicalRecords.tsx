@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,7 +8,10 @@ import { usePrivy } from "@privy-io/react-auth";
 
 const MedicalRecords = () => {
   const { authenticated } = usePrivy();
-  
+
+  // Modal state
+  const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+
   // If not authenticated, user shouldn't be able to access medical records
   if (!authenticated) {
     return (
@@ -29,7 +32,7 @@ const MedicalRecords = () => {
       </div>
     );
   }
-  
+
   const records = [
     {
       title: "Annual Physical Examination",
@@ -128,11 +131,15 @@ const MedicalRecords = () => {
                 <TabsTrigger value="medications">Medications</TabsTrigger>
                 <TabsTrigger value="procedures">Procedures</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="all" className="mt-6">
                 <div className="space-y-4">
                   {records.map((record, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition"
+                      onClick={() => setSelectedRecord(record)}
+                    >
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
                           <h3 className="font-medium text-blue-600">{record.title}</h3>
@@ -161,6 +168,57 @@ const MedicalRecords = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal */}
+      {selectedRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm transition-all">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-8 relative animate-fade-in">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-blue-600 text-3xl font-bold transition"
+              onClick={() => setSelectedRecord(null)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="flex items-center mb-4">
+              <FileText className="w-7 h-7 text-blue-600 mr-3" />
+              <h2 className="text-2xl font-bold text-gray-900">{selectedRecord.title}</h2>
+            </div>
+            <div className="space-y-3 text-gray-700">
+              <div>
+                <span className="font-semibold">Doctor/Provider: </span>
+                <span className="text-gray-900">{selectedRecord.doctor}</span>
+              </div>
+              <div>
+                <span className="font-semibold">Type: </span>
+                <span className={`px-2 py-1 text-xs rounded ${getTypeColor(selectedRecord.type)}`}>
+                  {selectedRecord.type}
+                </span>
+              </div>
+              <div>
+                <span className="font-semibold">Date: </span>
+                <span className="inline-flex items-center">
+                  <Clock className="w-4 h-4 mr-1 text-gray-500" />
+                  {selectedRecord.date}
+                </span>
+              </div>
+              <div>
+                <span className="font-semibold">Shared: </span>
+                {selectedRecord.shared ? (
+                  <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Yes</span>
+                ) : (
+                  <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">No</span>
+                )}
+              </div>
+            </div>
+            <div className="mt-8 flex justify-end">
+              <Button variant="outline" className="px-6 py-2" onClick={() => setSelectedRecord(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
