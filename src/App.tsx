@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import Campaigns from "./pages/Campaigns";
 import StartCampaign from "./pages/StartCampaign";
 import CampaignDetail from "./pages/CampaignDetail";
+import Dashboard from "./pages/Dashboard";
+import MedicalRecords from "./pages/MedicalRecords";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ const App = () => (
           <Route path="/campaigns" element={<Campaigns />} />
           <Route path="/start-campaign" element={<StartCampaign />} />
           <Route path="/campaign/:id" element={<CampaignDetail />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/medical-records" element={<MedicalRecords />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
