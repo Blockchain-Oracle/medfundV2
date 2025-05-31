@@ -1,0 +1,20 @@
+[phases.setup]
+nixPkgs = ['nodejs_23', 'pnpm']
+
+[phases.install]
+cmds = ['pnpm install --frozen-lockfile']
+
+[phases.build]
+cmds = ['pnpm']
+cacheDirectories = ['node_modules/.cache']
+
+[start]
+# Run server using tsx to handle TypeScript files properly
+cmd = 'pnpm dev:all'
+runImage = 'default'
+
+[variables]
+NODE_ENV = 'production'
+PORT = '3001'
+HOST = '0.0.0.0'
+VITE_PORT = '8080'
