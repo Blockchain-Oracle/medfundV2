@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     nodePolyfills({
-      include: ['buffer', 'process', 'stream', 'crypto'],
+      include: ['buffer', 'process', 'stream', 'crypto', 'util', 'events'],
       globals: {
         Buffer: true,
         global: true,
@@ -35,4 +35,31 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        /^postgres(\/.*)?$/,
+        /^pg(\/.*)?$/,
+        /^perf_hooks(\/.*)?$/,
+        /^net(\/.*)?$/,
+        /^tls(\/.*)?$/,
+        /^fs(\/.*)?$/
+      ],
+      output: {
+        // Make sure the externalized modules don't break the build
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('postgres') || 
+                id.includes('pg') || 
+                id.includes('perf_hooks') ||
+                id.includes('net') ||
+                id.includes('tls') ||
+                id.includes('fs')) {
+              return 'vendor-server-only';
+            }
+          }
+        }
+      }
+    }
+  }
 }));
