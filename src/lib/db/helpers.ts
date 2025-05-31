@@ -196,9 +196,9 @@ export const createCampaignWithImage = async (
       // If previewImage is already a base64 string, use it directly
       if (typeof previewImage === 'string') {
         imageBase64 = previewImage;
-      } else if (previewImage instanceof File) {
+      } else if (previewImage && typeof previewImage === 'object' && 'name' in previewImage) {
         // Convert File to base64
-        imageBase64 = await fileToBase64(previewImage);
+        imageBase64 = await fileToBase64(previewImage as File);
       }
     } catch (error) {
       console.error("Error encoding campaign image:", error);

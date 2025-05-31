@@ -94,7 +94,7 @@ const StartCampaign = () => {
       if (formData.previewImage) {
         if (typeof formData.previewImage === 'string') {
           imageBase64 = formData.previewImage;
-        } else if (formData.previewImage instanceof File) {
+        } else if (formData.previewImage && typeof formData.previewImage === 'object' && 'name' in formData.previewImage) {
           // Convert File to base64
           const reader = new FileReader();
           imageBase64 = await new Promise((resolve) => {
@@ -159,7 +159,7 @@ const StartCampaign = () => {
       console.error("Error submitting campaign:", error);
       
       // Show more descriptive error based on the error message
-      if (error instanceof Error && error.message.includes('upload')) {
+      if (error && typeof error === 'object' && 'message' in error && error.message.includes('upload')) {
         setFileUploadErrors([error.message]);
         toast.error("Failed to upload files. Please try again with smaller files or different file formats.");
       } else {
