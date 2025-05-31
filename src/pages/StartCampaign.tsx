@@ -94,7 +94,7 @@ const StartCampaign = () => {
       if (formData.previewImage) {
         if (typeof formData.previewImage === 'string') {
           imageBase64 = formData.previewImage;
-        } else if (formData.previewImage && typeof formData.previewImage === 'object' && 'name' in formData.previewImage) {
+        } else if (formData.previewImage instanceof File) {
           // Convert File to base64
           const reader = new FileReader();
           imageBase64 = await new Promise((resolve) => {

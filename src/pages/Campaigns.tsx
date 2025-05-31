@@ -29,6 +29,7 @@ interface Campaign {
   location?: string;
   endDate?: string;
   createdAt: string;
+  donorCount?: number;
 }
 
 const Campaigns = () => {
@@ -213,8 +214,7 @@ const Campaigns = () => {
                     <div className="flex justify-between items-center text-sm text-gray-600">
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-1" />
-                        {/* We don't have donors count from API yet, display placeholder */}
-                        — donors
+                        {campaign.donorCount ? `${campaign.donorCount} donors` : "0 donors"}
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
