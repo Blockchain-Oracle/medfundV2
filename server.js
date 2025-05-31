@@ -306,6 +306,35 @@ app.use('/api/uploadthing', async (req, res) => {
   }
 });
 
+// Ensure user API endpoint
+app.use('/api/users/ensure', async (req, res) => {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const request = new Request(url, {
+      method: req.method,
+      headers: new Headers(req.headers),
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+    });
+    
+    const response = await ensureUserHandler(request);
+    
+    // Set status code
+    res.status(response.status);
+    
+    // Set headers
+    for (const [key, value] of response.headers.entries()) {
+      res.setHeader(key, value);
+    }
+    
+    // Send body
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error('Error handling ensure user request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Add file upload endpoint
 app.post('/api/upload', upload.single('image'), (req, res) => {
   try {

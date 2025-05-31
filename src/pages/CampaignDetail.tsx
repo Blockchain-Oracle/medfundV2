@@ -250,6 +250,46 @@ const CampaignDetail = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Supporting Documents */}
+            {campaign.documentsUrl && campaign.documentsUrl.length > 0 && (
+              <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <FileText className="h-5 w-5 mr-2" />
+                    Supporting Documents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {campaign.documentsUrl.map((url, index) => {
+                      const fileName = url.split('/').pop() || `Document ${index + 1}`;
+                      const isPdf = url.toLowerCase().endsWith('.pdf');
+                      
+                      return (
+                        <a 
+                          key={index}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center p-3 border rounded-md hover:bg-blue-50 transition-colors"
+                        >
+                          <FileText className="h-5 w-5 text-blue-600 mr-3" />
+                          <div>
+                            <p className="text-sm font-medium text-blue-700 truncate max-w-[200px]">
+                              {fileName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {isPdf ? 'PDF Document' : 'Image File'}
+                            </p>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Updates */}
             <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
