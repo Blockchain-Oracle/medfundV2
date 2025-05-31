@@ -59,6 +59,7 @@
     "@tanstack/react-query": "^5.56.2",
     "@tanstack/react-query-devtools": "^5.79.0",
     "@types/crypto-js": "^4.2.2",
+    "@uploadthing/react": "^7.3.1",
     "axios": "^1.9.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
@@ -74,6 +75,7 @@
     "express": "^4.21.2",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
+    "multer": "^2.0.0",
     "next-themes": "^0.3.0",
     "postgres": "^3.4.7",
     "process": "^0.11.10",
@@ -89,6 +91,7 @@
     "stripe": "^18.2.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
+    "uploadthing": "^7.7.2",
     "vaul": "^0.9.3",
     "vite-plugin-node-polyfills": "^0.23.0",
     "zod": "^3.23.8"

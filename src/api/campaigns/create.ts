@@ -12,8 +12,8 @@ interface CreateCampaignRequest {
   walletAddress: string;
   location: string | null;
   userId: string;
-  imageBase64: string | null;
-  documentsBase64: string[] | null;
+  imageUrl: string | null;
+  documentsUrl: string[] | null;
 }
 
 export async function handler(req: Request) {
@@ -42,8 +42,8 @@ export async function handler(req: Request) {
       walletAddress: body.walletAddress,
       location: body.location,
       status: 'pending',
-      imageUrl: body.imageBase64, // Store base64 image directly
-      documentsUrl: body.documentsBase64 || [], // Store base64 documents directly
+      imageUrl: body.imageUrl,
+      documentsUrl: body.documentsUrl || [],
     };
     
     // Insert into database

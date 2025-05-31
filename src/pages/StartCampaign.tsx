@@ -1,6 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle, X, File, FileImage, Info, Loader2 } from "lucide-react";
+import { ArrowLeft, Shield, FileText, CheckCircle, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePrivy } from "@privy-io/react-auth";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { FileUpload } from "@/components/ui/file-upload";
 
-// Update the formData interface to properly type previewImage
+// Update the formData interface to use UploadThing URLs
 interface FormData {
   title: string;
   description: string;
@@ -22,8 +22,8 @@ interface FormData {
   category: string;
   urgent: boolean;
   walletAddress: string;
-  documents: File[];
-  previewImage: File | string | null;
+  documentsUrl: string[];
+  imageUrl: string;
   personalInfo: {
     fullName: string;
     email: string;
@@ -43,8 +43,8 @@ const StartCampaign = () => {
     category: "",
     urgent: false,
     walletAddress: "",
-    documents: [],
-    previewImage: null,
+    documentsUrl: [],
+    imageUrl: "",
     personalInfo: {
       fullName: "",
       email: "",
@@ -53,7 +53,6 @@ const StartCampaign = () => {
     }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isImageUploading, setIsImageUploading] = useState(false);
   const [fileUploadErrors, setFileUploadErrors] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user, authenticated } = usePrivy();
@@ -89,38 +88,32 @@ const StartCampaign = () => {
         return;
       }
       
-      // Process image to base64 if it's a File
-      let imageBase64 = null;
-      if (formData.previewImage) {
-        if (typeof formData.previewImage === 'string') {
-          imageBase64 = formData.previewImage;
-        } else if (formData.previewImage && typeof formData.previewImage === 'object' && 'name' in formData.previewImage) {
-          // Convert File to base64
-          const reader = new FileReader();
-          imageBase64 = await new Promise((resolve) => {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(formData.previewImage as File);
-          });
-        }
-      }
-      
-      // Process documents to base64
-      const documentsBase64: string[] = [];
-      if (formData.documents.length > 0) {
-        for (const doc of formData.documents) {
-          const reader = new FileReader();
-          const docBase64 = await new Promise<string>((resolve) => {
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(doc);
-          });
-          documentsBase64.push(docBase64);
-        }
-      }
-      
-      // Show toast for starting file uploads
+      // Show toast for campaign creation
       toast.info("Creating campaign...");
       
-      // Prepare campaign data
+      // Check if the user exists in our database, create if not
+      try {
+        const userCheckResponse = await fetch('/api/users/ensure', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: user.id,
+            email: user.email?.address || formData.personalInfo.email,
+            name: formData.personalInfo.fullName,
+          }),
+        });
+        
+        if (!userCheckResponse.ok) {
+          console.warn("Could not ensure user exists, campaign creation may fail");
+        }
+      } catch (error) {
+        console.error("Error ensuring user exists:", error);
+        // Continue anyway, the campaign creation will fail if user doesn't exist
+      }
+      
+      // Prepare campaign data - now using UploadThing URLs directly
       const campaignData = {
         title: formData.title,
         description: formData.description,
@@ -131,8 +124,8 @@ const StartCampaign = () => {
         walletAddress: formData.walletAddress,
         location: formData.personalInfo.address || null,
         userId: user.id,
-        imageBase64,
-        documentsBase64: documentsBase64.length > 0 ? documentsBase64 : null,
+        imageUrl: formData.imageUrl || null,
+        documentsUrl: formData.documentsUrl || [],
       };
       
       // Call the API endpoint
@@ -171,86 +164,6 @@ const StartCampaign = () => {
   };
 
   const progressPercentage = (currentStep / totalSteps) * 100;
-
-  // Handle image upload
-  const handleImageUpload = (file: File) => {
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image file size exceeds 5MB limit");
-      return;
-    }
-    
-    // Validate file type
-    if (!file.type.match(/^image\/(jpeg|png|jpg|webp)$/)) {
-      toast.error("Unsupported file format. Please use JPEG, PNG or WebP");
-      return;
-    }
-    
-    setIsImageUploading(true);
-    
-    // Create preview and set the file in state
-    setTimeout(() => {
-      setFormData({...formData, previewImage: file as File});
-      setIsImageUploading(false);
-      toast.success("Image added successfully");
-    }, 500);
-  };
-
-  // Dropzone implementation
-  const onDrop = useCallback((acceptedFiles) => {
-    // Validate files
-    const validFiles = acceptedFiles.filter(file => {
-      // Check file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        setFileUploadErrors(prev => [...prev, `File ${file.name} exceeds 10MB limit`]);
-        return false;
-      }
-      
-      // Check file type
-      if (!file.type.match(/^(application\/pdf|image\/(jpeg|png|jpg))$/)) {
-        setFileUploadErrors(prev => [...prev, `File ${file.name} is not a supported format`]);
-        return false;
-      }
-      
-      return true;
-    });
-    
-    if (validFiles.length > 0) {
-      // Show success toast for upload
-      toast.success(`${validFiles.length} file(s) added`);
-      
-      // Update form data with the new files
-      setFormData(prevData => ({
-        ...prevData,
-        documents: [
-          ...prevData.documents,
-          ...validFiles.map(file => 
-            Object.assign(file, {
-              preview: URL.createObjectURL(file)
-            })
-          )
-        ]
-      }));
-    }
-  }, []);
-
-  const removeFile = (fileIndex) => {
-    setFormData(prevData => ({
-      ...prevData,
-      documents: prevData.documents.filter((_, index) => index !== fileIndex)
-    }));
-    toast.info("File removed");
-  };
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'application/pdf': ['.pdf'],
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png']
-    },
-    maxSize: 10485760, // 10MB
-  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 relative overflow-hidden">
@@ -338,61 +251,20 @@ const StartCampaign = () => {
                     />
                   </div>
                   
-                  {/* Preview Image Upload */}
+                  {/* UploadThing Image Upload */}
                   <div>
-                    <Label htmlFor="previewImage">Campaign Preview Image</Label>
-                    <div className="mt-2 flex flex-col space-y-4">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50">
-                        {formData.previewImage ? (
-                          <div className="relative w-full">
-                            <img 
-                              src={typeof formData.previewImage === 'string' 
-                                ? formData.previewImage
-                                : formData.previewImage ? URL.createObjectURL(formData.previewImage) : ''}
-                              alt="Preview" 
-                              className="h-48 mx-auto rounded-md object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setFormData({...formData, previewImage: null})}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        ) : isImageUploading ? (
-                          <div className="flex flex-col items-center justify-center">
-                            <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-2" />
-                            <p className="text-sm text-gray-500">Uploading image...</p>
-                          </div>
-                        ) : (
-                          <>
-                            <FileImage className="h-12 w-12 text-gray-400" />
-                            <p className="mt-2 text-sm text-gray-500">
-                              Upload a main image for your campaign
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Recommended: Square image, at least 800x800px (Max: 5MB)
-                            </p>
-                            <label className="mt-4">
-                              <span className="bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer hover:bg-blue-700 transition-colors">
-                                Select Image
-                              </span>
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    handleImageUpload(file);
-                                  }
-                                }}
-                              />
-                            </label>
-                          </>
-                        )}
-                      </div>
+                    <Label htmlFor="imageUrl">Campaign Preview Image</Label>
+                    <div className="mt-2">
+                      <FileUpload
+                        endpoint="campaignImage"
+                        value={formData.imageUrl}
+                        onChange={(url) => setFormData({...formData, imageUrl: url as string})}
+                        maxFiles={1}
+                        maxSize={4}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Recommended: Square image, at least 800x800px (Max: 4MB)
+                      </p>
                     </div>
                   </div>
                   
@@ -561,7 +433,7 @@ const StartCampaign = () => {
                 </div>
               )}
 
-              {/* Step 4: Document Upload */}
+              {/* Step 4: Document Upload & Review */}
               {currentStep === 4 && (
                 <div className="space-y-6">
                   <div className="bg-amber-50 p-4 rounded-lg">
@@ -577,73 +449,24 @@ const StartCampaign = () => {
                     </ul>
                   </div>
                   
-                  <div 
-                    {...getRootProps()} 
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                      isDragActive 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                    }`}
-                  >
-                    <input {...getInputProps()} />
-                    <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                      {isDragActive ? 'Drop files here' : 'Upload Medical Documents'}
-                    </h3>
-                    <p className="text-gray-500 mb-4">
-                      {isDragActive 
-                        ? 'Drop your files here...' 
-                        : 'Drag and drop files here, or click to select files'}
-                    </p>
-                    <Button type="button" variant="outline">
-                      Choose Files
-                    </Button>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Supported formats: PDF, JPG, PNG (Max 10MB each)
-                    </p>
+                  {/* UploadThing Document Upload */}
+                  <div>
+                    <Label htmlFor="documentsUrl">Upload Medical Documents</Label>
+                    <div className="mt-2">
+                      <FileUpload
+                        endpoint="campaignDocuments"
+                        value={formData.documentsUrl}
+                        onChange={(urls) => setFormData({...formData, documentsUrl: urls as string[]})}
+                        maxFiles={5}
+                        maxSize={16}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Upload medical documents, reports, or any supporting files (Max: 16MB each)
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Display uploaded files */}
-                  {formData.documents.length > 0 && (
-                    <div className="mt-6">
-                      <h4 className="font-medium mb-3">Uploaded Documents ({formData.documents.length})</h4>
-                      <div className="space-y-2">
-                        {formData.documents.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-                            <div className="flex items-center">
-                              <File className="h-5 w-5 text-blue-600 mr-2" />
-                              <div>
-                                <p className="text-sm font-medium truncate max-w-[200px] sm:max-w-[300px]">
-                                  {file.name}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {(file.size / 1024 / 1024).toFixed(2)} MB
-                                </p>
-                              </div>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeFile(index);
-                              }}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Step 4: Review */}
-              {currentStep === 4 && (
-                <div>
-                  <div className="bg-green-50 p-4 rounded-lg mb-6">
+                  <div className="bg-green-50 p-4 rounded-lg mb-6 mt-8">
                     <div className="flex items-center text-green-800 mb-2">
                       <CheckCircle className="h-5 w-5 mr-2" />
                       <h3 className="font-semibold">All Set! Review Your Campaign</h3>
@@ -654,13 +477,11 @@ const StartCampaign = () => {
                   </div>
                   
                   {/* Campaign Preview Image */}
-                  {formData.previewImage && (
+                  {formData.imageUrl && (
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold mb-2">Campaign Image</h3>
                       <img 
-                        src={typeof formData.previewImage === 'string'
-                          ? formData.previewImage
-                          : formData.previewImage ? URL.createObjectURL(formData.previewImage) : ''}
+                        src={formData.imageUrl}
                         alt="Campaign Preview" 
                         className="h-48 w-auto rounded-lg shadow-md"
                       />
@@ -705,13 +526,14 @@ const StartCampaign = () => {
                       </div>
                     )}
                     
-                    {formData.documents.length > 0 && (
+                    {formData.documentsUrl.length > 0 && (
                       <div>
                         <span className="font-semibold">Supporting Documents:</span>
                         <ul className="mt-1 text-gray-600 list-disc list-inside">
-                          {formData.documents.map((doc, index) => (
-                            <li key={index}>{doc.name}</li>
-                          ))}
+                          {formData.documentsUrl.map((url, index) => {
+                            const fileName = url.split('/').pop() || `Document ${index + 1}`;
+                            return <li key={index}>{fileName}</li>;
+                          })}
                         </ul>
                       </div>
                     )}
