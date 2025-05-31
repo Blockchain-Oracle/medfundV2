@@ -3,6 +3,25 @@ import { NewDonation } from '@/lib/db/schema/donations';
 import { findUserById, createUser } from '@/lib/db/helpers';
 import { createId } from '@/lib/db/utils';
 
+// Function to ensure an anonymous user exists in the database
+async function ensureAnonymousUser() {
+  // First, check if anonymous user already exists
+  const anonymousUser = await findUserById('anonymous');
+  
+  // If not, create one
+  if (!anonymousUser) {
+    await createUser({
+      id: 'anonymous',
+      email: 'anonymous@medfund.org',
+      fullName: 'Anonymous Donor',
+      role: 'anonymous',
+      isVerified: true
+    });
+  }
+  
+  return 'anonymous';
+}
+
 export async function handler(req: Request) {
   // Handle POST request to create a donation
   if (req.method === 'POST') {
@@ -27,9 +46,16 @@ export async function handler(req: Request) {
       }
       
       // Handle anonymous donations or users that don't exist in the database
-      if (donationData.anonymous || !donationData.userId || donationData.userId.startsWith('did:')) {
-        // Use a system anonymous user for all anonymous donations
-        donationData.userId = 'anonymous';
+      if (donationData.anonymous || !donationData.userId || donationData.userId.startsWith('did:') || donationData.userId === 'anonymous') {
+        // Ensure the anonymous user exists in the database
+        donationData.userId = await ensureAnonymousUser();
+      } else {
+        // Check if the user exists
+        const user = await findUserById(donationData.userId);
+        if (!user) {
+          // If user doesn't exist, use anonymous user
+          donationData.userId = await ensureAnonymousUser();
+        }
       }
       
       // Create the donation in the database

@@ -1,1 +1,0 @@
-ALTER TABLE "campaigns" ADD COLUMN "donor_count" integer DEFAULT 0 NOT NULL;

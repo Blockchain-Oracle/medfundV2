@@ -1,39 +1,15 @@
-import { supabase } from './client';
-
 /**
- * Creates Supabase storage buckets if they don't already exist
- * @returns Promise that resolves when buckets are created or already exist
+ * This file previously contained Supabase bucket setup,
+ * but has been replaced with base64 utilities.
+ * The constants are kept for backward compatibility.
  */
+
+// Dummy function for backward compatibility
 export const ensureStorageBuckets = async (): Promise<void> => {
-  const requiredBuckets = ['campaign-images', 'campaign-documents'];
-  
-  try {
-    // List all buckets
-    const { data: buckets, error } = await supabase.storage.listBuckets();
-    
-    if (error) {
-      console.error('Error listing buckets:', error);
-      throw error;
-    }
-    
-    // Get existing bucket names
-    const existingBucketNames = buckets.map(bucket => bucket.name);
-    
-    // Check missing buckets
-    const missingBuckets = requiredBuckets.filter(bucket => !existingBucketNames.includes(bucket));
-    
-    if (missingBuckets.length > 0) {
-      console.error(`Missing buckets: ${missingBuckets.join(', ')}`);
-      console.log('Please create these buckets manually in the Supabase dashboard');
-    } else {
-      console.log('All required storage buckets are available');
-    }
-  } catch (error) {
-    console.error('Failed to ensure storage buckets:', error);
-    throw error;
-  }
+  console.log('Storage buckets are deprecated, using base64 encoding instead');
+  return;
 };
 
-// Export bucket names as constants
+// Export bucket names as constants (still used in legacy code references)
 export const BUCKET_CAMPAIGN_IMAGES = 'campaign-images';
 export const BUCKET_CAMPAIGN_DOCUMENTS = 'campaign-documents'; 

@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1748636248210,
-      "tag": "0000_naive_cobalt_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1748650296555,
-      "tag": "0001_stormy_sunset_bain",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1748652383558,
-      "tag": "0002_dry_screwball",
+      "when": 1748656311121,
+      "tag": "0000_outgoing_killer_shrike",
       "breakpoints": true
     }
   ]

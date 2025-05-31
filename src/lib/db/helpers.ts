@@ -9,6 +9,27 @@ import { eq, and, or, desc, asc, count, sql } from 'drizzle-orm';
 import { uploadFile, uploadMultipleFiles } from '@/integrations/supabase/fileStorage';
 import { BUCKET_CAMPAIGN_DOCUMENTS, BUCKET_CAMPAIGN_IMAGES } from '@/integrations/supabase/createBuckets';
 
+// File handling utilities
+export const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
+export const base64ToFile = (base64: string, filename: string, type: string): File => {
+  const arr = base64.split(',');
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type });
+};
+
 // User operations
 export const findUserById = async (id: string): Promise<User | undefined> => {
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
@@ -160,42 +181,53 @@ export const createPaymentMethod = async (data: NewPaymentMethod): Promise<Payme
   return result[0];
 };
 
-// Create a campaign with image upload
-export const createCampaignWithImage = async (data: NewCampaign, previewImage: File | null, documents: File[] = []): Promise<Campaign> => {
-  let imageUrl = null;
-  let documentUrls: string[] = [];
-  
-  // Upload preview image to Supabase storage if provided
+/**
+ * Creates a campaign and handles image and document uploads using base64 encoding
+ */
+export const createCampaignWithImage = async (
+  data: NewCampaign, 
+  previewImage: File | string | null, 
+  documents: File[] = []
+): Promise<Campaign> => {
+  // Process the campaign image if provided
+  let imageBase64 = null;
   if (previewImage) {
-    const { publicUrl, error } = await uploadFile(previewImage, BUCKET_CAMPAIGN_IMAGES, 'previews');
-    
-    if (error) {
-      console.error('Error uploading preview image:', error);
-      throw new Error(`Failed to upload preview image: ${error.message}`);
+    try {
+      // If previewImage is already a base64 string, use it directly
+      if (typeof previewImage === 'string') {
+        imageBase64 = previewImage;
+      } else if (previewImage instanceof File) {
+        // Convert File to base64
+        imageBase64 = await fileToBase64(previewImage);
+      }
+    } catch (error) {
+      console.error("Error encoding campaign image:", error);
+      throw new Error("Failed to process campaign image");
     }
-    
-    imageUrl = publicUrl;
   }
-  
-  // Upload documents to Supabase storage if provided
+
+  // Process documents if provided
+  const documentBase64Array: string[] = [];
   if (documents.length > 0) {
-    const { publicUrls, errors } = await uploadMultipleFiles(documents, BUCKET_CAMPAIGN_DOCUMENTS, 'medical');
-    
-    if (errors.length > 0) {
-      console.error('Errors uploading documents:', errors);
-      // We'll continue even if some documents failed to upload
+    try {
+      for (const document of documents) {
+        const docBase64 = await fileToBase64(document);
+        documentBase64Array.push(docBase64);
+      }
+    } catch (error) {
+      console.error("Error encoding campaign documents:", error);
+      throw new Error("Failed to process campaign documents");
     }
-    
-    documentUrls = publicUrls;
   }
-  
-  // Create campaign with uploaded URLs
-  const campaignData = {
+
+  // Create campaign with base64 data
+  const campaignData: NewCampaign = {
     ...data,
-    imageUrl,
-    documentsUrl: documentUrls.length > 0 ? documentUrls : undefined,
+    imageUrl: imageBase64,
+    documentsUrl: documentBase64Array
   };
-  
+
+  // Insert the campaign into the database
   const result = await db.insert(campaigns).values(campaignData).returning();
   return result[0];
 }; 

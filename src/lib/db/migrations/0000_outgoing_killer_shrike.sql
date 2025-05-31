@@ -7,16 +7,29 @@ CREATE TABLE "campaigns" (
 	"user_id" text NOT NULL,
 	"title" varchar(255) NOT NULL,
 	"description" text NOT NULL,
+	"story_content" text,
 	"goal" numeric(10, 2) NOT NULL,
 	"raised" numeric(10, 2) DEFAULT '0' NOT NULL,
+	"donor_count" integer DEFAULT 0 NOT NULL,
 	"category" "campaign_category" NOT NULL,
 	"status" "campaign_status" DEFAULT 'pending' NOT NULL,
 	"is_urgent" boolean DEFAULT false,
 	"image_url" text,
 	"location" varchar(255),
 	"documents_url" text[],
+	"wallet_address" text,
 	"start_date" timestamp DEFAULT now(),
 	"end_date" timestamp,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "campaign_updates" (
+	"id" text PRIMARY KEY NOT NULL,
+	"campaign_id" text NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"content" text NOT NULL,
+	"update_date" timestamp DEFAULT now(),
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now()
 );
@@ -43,6 +56,7 @@ CREATE TABLE "users" (
 	"phone" varchar(50),
 	"address" text,
 	"avatar_url" text,
+	"wallet_address" text,
 	"is_verified" boolean DEFAULT false,
 	"role" varchar(50) DEFAULT 'user',
 	"created_at" timestamp DEFAULT now(),
@@ -81,6 +95,7 @@ CREATE TABLE "payment_methods" (
 );
 --> statement-breakpoint
 ALTER TABLE "campaigns" ADD CONSTRAINT "campaigns_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "campaign_updates" ADD CONSTRAINT "campaign_updates_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "donations" ADD CONSTRAINT "donations_campaign_id_campaigns_id_fk" FOREIGN KEY ("campaign_id") REFERENCES "public"."campaigns"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "donations" ADD CONSTRAINT "donations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "medical_records" ADD CONSTRAINT "medical_records_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

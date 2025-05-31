@@ -11,13 +11,31 @@ import { Progress } from "@/components/ui/progress";
 import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle, X, File, FileImage, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePrivy } from "@privy-io/react-auth";
-import { createCampaignWithImage } from "@/lib/db/helpers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Update the formData interface to properly type previewImage
+interface FormData {
+  title: string;
+  description: string;
+  storyContent: string;
+  goal: string;
+  category: string;
+  urgent: boolean;
+  walletAddress: string;
+  documents: File[];
+  previewImage: File | string | null;
+  personalInfo: {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+  };
+}
 
 const StartCampaign = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4; // Updated total steps
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     description: "",
     storyContent: "",
@@ -71,7 +89,38 @@ const StartCampaign = () => {
         return;
       }
       
-      // Create campaign data object
+      // Process image to base64 if it's a File
+      let imageBase64 = null;
+      if (formData.previewImage) {
+        if (typeof formData.previewImage === 'string') {
+          imageBase64 = formData.previewImage;
+        } else if (formData.previewImage && typeof formData.previewImage === 'object' && 'name' in formData.previewImage) {
+          // Convert File to base64
+          const reader = new FileReader();
+          imageBase64 = await new Promise((resolve) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(formData.previewImage as File);
+          });
+        }
+      }
+      
+      // Process documents to base64
+      const documentsBase64: string[] = [];
+      if (formData.documents.length > 0) {
+        for (const doc of formData.documents) {
+          const reader = new FileReader();
+          const docBase64 = await new Promise<string>((resolve) => {
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(doc);
+          });
+          documentsBase64.push(docBase64);
+        }
+      }
+      
+      // Show toast for starting file uploads
+      toast.info("Creating campaign...");
+      
+      // Prepare campaign data
       const campaignData = {
         title: formData.title,
         description: formData.description,
@@ -81,25 +130,30 @@ const StartCampaign = () => {
         isUrgent: formData.urgent,
         walletAddress: formData.walletAddress,
         location: formData.personalInfo.address || null,
-        // Use the user ID from Privy
         userId: user.id,
-        status: 'pending' as const // campaigns start as pending until approved
+        imageBase64,
+        documentsBase64: documentsBase64.length > 0 ? documentsBase64 : null,
       };
       
-      // Show toast for starting file uploads
-      toast.info("Uploading files and creating campaign...");
+      // Call the API endpoint
+      const response = await fetch('/api/campaigns/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(campaignData),
+      });
       
-      // Create the campaign in the database using the helper
-      const campaign = await createCampaignWithImage(
-        campaignData,
-        formData.previewImage,
-        formData.documents
-      );
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to create campaign');
+      }
       
       toast.success("Campaign submitted successfully!");
       
       // Navigate to the campaign detail page
-      navigate(`/campaign/${campaign.id}`);
+      navigate(`/campaign/${result.campaign.id}`);
       
     } catch (error) {
       console.error("Error submitting campaign:", error);
@@ -136,7 +190,7 @@ const StartCampaign = () => {
     
     // Create preview and set the file in state
     setTimeout(() => {
-      setFormData({...formData, previewImage: file});
+      setFormData({...formData, previewImage: file as File});
       setIsImageUploading(false);
       toast.success("Image added successfully");
     }, 500);
@@ -292,7 +346,9 @@ const StartCampaign = () => {
                         {formData.previewImage ? (
                           <div className="relative w-full">
                             <img 
-                              src={URL.createObjectURL(formData.previewImage)} 
+                              src={typeof formData.previewImage === 'string' 
+                                ? formData.previewImage
+                                : formData.previewImage ? URL.createObjectURL(formData.previewImage) : ''}
                               alt="Preview" 
                               className="h-48 mx-auto rounded-md object-cover"
                             />
@@ -602,7 +658,9 @@ const StartCampaign = () => {
                     <div className="mb-6">
                       <h3 className="text-lg font-semibold mb-2">Campaign Image</h3>
                       <img 
-                        src={URL.createObjectURL(formData.previewImage)} 
+                        src={typeof formData.previewImage === 'string'
+                          ? formData.previewImage
+                          : formData.previewImage ? URL.createObjectURL(formData.previewImage) : ''}
                         alt="Campaign Preview" 
                         className="h-48 w-auto rounded-lg shadow-md"
                       />

@@ -32,6 +32,7 @@ app.use(express.static(path.join(__dirname, 'dist')));
 import { handler as paymentsStatusHandler } from './src/api/payments/status/[id].ts';
 import { handler as donationsHandler } from './src/api/donations/index.ts';
 import { handler as recentDonationsHandler } from './src/api/campaigns/recent-donations.ts';
+import { handler as createCampaignHandler } from './src/api/campaigns/create.ts';
 
 // API Routes
 
@@ -208,6 +209,35 @@ app.use('/api/campaigns/recent-donations', async (req, res) => {
     res.send(body);
   } catch (error) {
     console.error('Error handling recent donations request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Campaign creation endpoint
+app.use('/api/campaigns/create', async (req, res) => {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const request = new Request(url, {
+      method: req.method,
+      headers: new Headers(req.headers),
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+    });
+    
+    const response = await createCampaignHandler(request);
+    
+    // Set status code
+    res.status(response.status);
+    
+    // Set headers
+    for (const [key, value] of response.headers.entries()) {
+      res.setHeader(key, value);
+    }
+    
+    // Send body
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error('Error handling campaign creation request:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
