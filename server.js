@@ -3,74 +3,123 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-// For ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import path from 'path';
+import { db, campaigns, campaignUpdates, donations, users } from './server.config.js';
+import { eq } from 'drizzle-orm';
 
 // Load environment variables
 dotenv.config();
 
-// Import handlers
-import { handler as createIntentHandler } from './src/api/payments/create-intent.js';
-import { handler as confirmIntentHandler } from './src/api/payments/confirm-intent.js';
-import { handler as statusHandler } from './src/api/payments/status/[id].js';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.API_PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Convert Express request/response to Web API Request/Response for compatibility
-const convertToWebRequest = (req) => {
-  return new Request(new URL(req.url, `http://${req.headers.host}`), {
-    method: req.method,
-    headers: new Headers(req.headers),
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
-  });
-};
-
-const handleResponse = async (res, handler, req) => {
-  try {
-    const webRequest = convertToWebRequest(req);
-    const response = await handler(webRequest);
-    
-    // Set status code
-    res.status(response.status);
-    
-    // Set headers
-    response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
-    });
-    
-    // Send body
-    const text = await response.text();
-    res.send(text);
-  } catch (error) {
-    console.error('Error handling request:', error);
-    res.status(500).json({ success: false, error: 'Internal server error' });
-  }
-};
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // API Routes
-app.post('/api/payments/create-intent', (req, res) => {
-  handleResponse(res, createIntentHandler, req);
+
+// Get all campaigns
+app.get('/api/campaigns', async (req, res) => {
+  try {
+    const allCampaigns = await db.select().from(campaigns);
+    res.json(allCampaigns);
+  } catch (error) {
+    console.error('Error fetching campaigns:', error);
+    res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
 });
 
-app.post('/api/payments/confirm-intent', (req, res) => {
-  handleResponse(res, confirmIntentHandler, req);
+// Get campaign by ID with related user data
+app.get('/api/campaigns/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Fetch campaign
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
+    
+    if (!campaign) {
+      return res.status(404).json({ error: 'Campaign not found' });
+    }
+    
+    // Fetch campaign organizer (user)
+    if (campaign.userId) {
+      const [user] = await db.select().from(users).where(eq(users.id, campaign.userId)).limit(1);
+      if (user) {
+        // Add user data but exclude sensitive fields
+        const { password, ...safeUserData } = user;
+        campaign.user = safeUserData;
+      }
+    }
+    
+    res.json(campaign);
+  } catch (error) {
+    console.error('Error fetching campaign:', error);
+    res.status(500).json({ error: 'Failed to fetch campaign' });
+  }
 });
 
-app.get('/api/payments/status/:id', (req, res) => {
-  // Add the ID to the request URL for the handler
-  req.url = `/api/payments/status/${req.params.id}`;
-  handleResponse(res, statusHandler, req);
+// Get campaign updates
+app.get('/api/campaigns/:id/updates', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const updates = await db.select()
+      .from(campaignUpdates)
+      .where(eq(campaignUpdates.campaignId, id))
+      .orderBy(campaignUpdates.updateDate);
+    
+    res.json(updates);
+  } catch (error) {
+    console.error('Error fetching campaign updates:', error);
+    res.status(500).json({ error: 'Failed to fetch campaign updates' });
+  }
 });
 
-// Start server
+// Get campaign donations with user data
+app.get('/api/campaigns/:id/donations', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const limit = parseInt(req.query.limit) || 5;
+    
+    const donationsList = await db.select()
+      .from(donations)
+      .where(eq(donations.campaignId, id))
+      .orderBy(donations.createdAt)
+      .limit(limit);
+    
+    // Fetch user data for each donation
+    const donationsWithUsers = await Promise.all(
+      donationsList.map(async (donation) => {
+        if (donation.userId && !donation.anonymous) {
+          const [user] = await db.select().from(users).where(eq(users.id, donation.userId)).limit(1);
+          if (user) {
+            // Add user data but exclude sensitive fields
+            const { password, ...safeUserData } = user;
+            return { ...donation, user: safeUserData };
+          }
+        }
+        return donation;
+      })
+    );
+    
+    res.json(donationsWithUsers);
+  } catch (error) {
+    console.error('Error fetching campaign donations:', error);
+    res.status(500).json({ error: 'Failed to fetch campaign donations' });
+  }
+});
+
+// Handle SPA routing by serving the index.html for any other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// Start the server
 app.listen(PORT, () => {
-  console.log(`API server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 }); 

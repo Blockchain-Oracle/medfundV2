@@ -3,4 +3,5 @@ export * from './users';
 export * from './campaigns';
 export * from './donations';
 export * from './medicalRecords';
-export * from './paymentMethods'; 
+export * from './paymentMethods';
+export * from './campaignUpdates'; 

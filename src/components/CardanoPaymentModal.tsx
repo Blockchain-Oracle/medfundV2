@@ -42,6 +42,8 @@ export const CardanoPaymentModal = ({
         return;
       }
 
+      console.log(`Sending donation to: ${recipientAddress}`);
+
       // Check if wallet has enough balance
       const hasEnough = await hasEnoughAda(amount + estimatedFee);
       if (!hasEnough) {

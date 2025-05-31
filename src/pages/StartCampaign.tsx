@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,18 +8,24 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle, X, File } from "lucide-react";
+import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle, X, File, FileImage, Info } from "lucide-react";
 import { toast } from "sonner";
+import { usePrivy } from "@privy-io/react-auth";
+import { createCampaignWithImage } from "@/lib/db/helpers";
 
 const StartCampaign = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 4; // Updated total steps
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    storyContent: "",
     goal: "",
     category: "",
     urgent: false,
+    walletAddress: "",
     documents: [],
+    previewImage: null,
     personalInfo: {
       fullName: "",
       email: "",
@@ -27,9 +33,12 @@ const StartCampaign = () => {
       address: ""
     }
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { user, authenticated } = usePrivy();
 
   const handleNext = () => {
-    if (currentStep < 4) {
+    if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -40,11 +49,60 @@ const StartCampaign = () => {
     }
   };
 
-  const handleSubmit = () => {
-    toast.success("Campaign submitted for review! We'll contact you within 24 hours.");
+  const handleSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      // Check if user is authenticated
+      if (!authenticated || !user) {
+        toast.error("You must be logged in to create a campaign");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Validate form data
+      if (!formData.title || !formData.description || !formData.goal || !formData.category) {
+        toast.error("Please fill in all required fields");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Create campaign data object
+      const campaignData = {
+        title: formData.title,
+        description: formData.description,
+        storyContent: formData.storyContent,
+        goal: formData.goal,
+        category: formData.category as "surgery" | "treatment" | "therapy" | "emergency" | "medication" | "rehabilitation" | "other",
+        isUrgent: formData.urgent,
+        walletAddress: formData.walletAddress,
+        location: formData.personalInfo.address || null,
+        // Use the user ID from Privy
+        userId: user.id,
+        status: 'pending' as const // campaigns start as pending until approved
+      };
+      
+      // Create the campaign in the database using the helper
+      const campaign = await createCampaignWithImage(
+        campaignData,
+        formData.previewImage,
+        formData.documents
+      );
+      
+      toast.success("Campaign submitted successfully!");
+      
+      // Navigate to the campaign detail page
+      navigate(`/campaign/${campaign.id}`);
+      
+    } catch (error) {
+      console.error("Error submitting campaign:", error);
+      toast.error("Failed to submit campaign. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const progressPercentage = (currentStep / 4) * 100;
+  const progressPercentage = (currentStep / totalSteps) * 100;
 
   // Dropzone implementation
   const onDrop = useCallback((acceptedFiles) => {
@@ -109,7 +167,7 @@ const StartCampaign = () => {
           <Card className="bg-white/10 backdrop-blur-sm border-white/20 mb-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-white font-semibold">Step {currentStep} of 4</span>
+                <span className="text-white font-semibold">Step {currentStep} of {totalSteps}</span>
                 <span className="text-blue-300">{Math.round(progressPercentage)}% Complete</span>
               </div>
               <Progress value={progressPercentage} className="h-2" />
@@ -155,6 +213,57 @@ const StartCampaign = () => {
                     />
                   </div>
                   
+                  {/* Preview Image Upload */}
+                  <div>
+                    <Label htmlFor="previewImage">Campaign Preview Image</Label>
+                    <div className="mt-2 flex flex-col space-y-4">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50">
+                        {formData.previewImage ? (
+                          <div className="relative w-full">
+                            <img 
+                              src={URL.createObjectURL(formData.previewImage)} 
+                              alt="Preview" 
+                              className="h-48 mx-auto rounded-md object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setFormData({...formData, previewImage: null})}
+                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <FileImage className="h-12 w-12 text-gray-400" />
+                            <p className="mt-2 text-sm text-gray-500">
+                              Upload a main image for your campaign
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              Recommended: Square image, at least 800x800px
+                            </p>
+                            <label className="mt-4">
+                              <span className="bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer hover:bg-blue-700 transition-colors">
+                                Select Image
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    setFormData({...formData, previewImage: file});
+                                  }
+                                }}
+                              />
+                            </label>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div>
                     <Label htmlFor="category">Medical Category</Label>
                     <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
@@ -185,6 +294,20 @@ const StartCampaign = () => {
                   </div>
                   
                   <div>
+                    <Label htmlFor="walletAddress">Cardano Wallet Address</Label>
+                    <Input
+                      id="walletAddress"
+                      placeholder="addr_test1..."
+                      value={formData.walletAddress}
+                      onChange={(e) => setFormData({...formData, walletAddress: e.target.value})}
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This is where you'll receive donations in ADA. Make sure to enter a valid Cardano address.
+                    </p>
+                  </div>
+                  
+                  <div>
                     <Label htmlFor="description">Campaign Description</Label>
                     <Textarea
                       id="description"
@@ -197,8 +320,41 @@ const StartCampaign = () => {
                 </div>
               )}
 
-              {/* Step 2: Personal Information */}
+              {/* Step 2: Campaign Story */}
               {currentStep === 2 && (
+                <div className="space-y-6">
+                  <div>
+                    <Label htmlFor="storyContent" className="text-lg font-semibold">Campaign Story</Label>
+                    <p className="text-gray-500 text-sm mb-4">
+                      Tell your campaign's full story. Be detailed and clear about the medical situation, treatment needs, and how the funds will be used.
+                    </p>
+                    <Textarea
+                      id="storyContent"
+                      placeholder="Share your complete story here. Include details about the medical condition, treatment plan, expected timeline, and how the funds will help..."
+                      value={formData.storyContent}
+                      onChange={(e) => setFormData({...formData, storyContent: e.target.value})}
+                      className="mt-2 min-h-[300px]"
+                    />
+                  </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-blue-800 flex items-center">
+                      <Info className="h-4 w-4 mr-2" />
+                      Tips for an effective campaign story
+                    </h3>
+                    <ul className="mt-2 text-sm text-blue-700 space-y-2">
+                      <li>• Be specific about the medical condition and needed treatment</li>
+                      <li>• Include a timeline of events and medical history if relevant</li>
+                      <li>• Explain how the funds will be used (breakdown of costs)</li>
+                      <li>• Share the impact this treatment will have on the patient's life</li>
+                      <li>• Include quotes from doctors or medical professionals if available</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Personal Information */}
+              {currentStep === 3 && (
                 <div className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div>
@@ -273,8 +429,8 @@ const StartCampaign = () => {
                 </div>
               )}
 
-              {/* Step 3: Document Upload */}
-              {currentStep === 3 && (
+              {/* Step 4: Document Upload */}
+              {currentStep === 4 && (
                 <div className="space-y-6">
                   <div className="bg-amber-50 p-4 rounded-lg">
                     <div className="flex items-center space-x-2 mb-2">
@@ -354,16 +510,28 @@ const StartCampaign = () => {
 
               {/* Step 4: Review */}
               {currentStep === 4 && (
-                <div className="space-y-6">
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span className="font-semibold text-green-900">Ready to Submit</span>
+                <div>
+                  <div className="bg-green-50 p-4 rounded-lg mb-6">
+                    <div className="flex items-center text-green-800 mb-2">
+                      <CheckCircle className="h-5 w-5 mr-2" />
+                      <h3 className="font-semibold">All Set! Review Your Campaign</h3>
                     </div>
                     <p className="text-green-700 text-sm">
-                      Your campaign will be reviewed within 24 hours. We'll contact you with next steps.
+                      Please review your campaign details below before submitting.
                     </p>
                   </div>
+                  
+                  {/* Campaign Preview Image */}
+                  {formData.previewImage && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold mb-2">Campaign Image</h3>
+                      <img 
+                        src={URL.createObjectURL(formData.previewImage)} 
+                        alt="Campaign Preview" 
+                        className="h-48 w-auto rounded-lg shadow-md"
+                      />
+                    </div>
+                  )}
                   
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Campaign Summary</h3>
@@ -380,6 +548,9 @@ const StartCampaign = () => {
                       <div>
                         <span className="font-semibold">Contact:</span> {formData.personalInfo.email || "Not provided"}
                       </div>
+                      <div className="md:col-span-2">
+                        <span className="font-semibold">Wallet Address:</span> {formData.walletAddress || "Not provided"}
+                      </div>
                     </div>
                     
                     <div>
@@ -388,6 +559,28 @@ const StartCampaign = () => {
                         {formData.description || "No description provided"}
                       </p>
                     </div>
+                    
+                    {formData.storyContent && (
+                      <div>
+                        <span className="font-semibold">Story Content:</span>
+                        <div className="mt-1 text-gray-600 border p-4 rounded-md max-h-48 overflow-y-auto">
+                          {formData.storyContent.split('\n\n').map((paragraph, i) => (
+                            <p key={i} className="mb-2">{paragraph}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {formData.documents.length > 0 && (
+                      <div>
+                        <span className="font-semibold">Supporting Documents:</span>
+                        <ul className="mt-1 text-gray-600 list-disc list-inside">
+                          {formData.documents.map((doc, index) => (
+                            <li key={index}>{doc.name}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -402,7 +595,7 @@ const StartCampaign = () => {
                   Previous
                 </Button>
                 
-                {currentStep < 4 ? (
+                {currentStep < totalSteps ? (
                   <Button 
                     onClick={handleNext}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -413,6 +606,7 @@ const StartCampaign = () => {
                   <Button 
                     onClick={handleSubmit}
                     className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={isSubmitting}
                   >
                     Submit Campaign
                   </Button>

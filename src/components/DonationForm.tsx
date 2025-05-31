@@ -14,9 +14,10 @@ import useCardano from "@/hooks/useCardano";
 
 interface DonationFormProps {
   campaign: {
-    id: number;
+    id: number | string;
     title: string;
     organizer: string;
+    walletAddress?: string;
   };
   onClose: () => void;
 }
@@ -34,7 +35,7 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
   const { usdToAda } = useCardano();
 
   // Mock campaign wallet address - in a real app, this would come from the campaign data
-  const campaignCardanoAddress = "addr_test1qp9yfvry9vmwjmxjlzkcxyl7xnflwhvn3gm9q5fxpw6lx6w8j37xclznqcw2j0m62h0mqmufya6jknvw5nutvs7a5c4s4m3wlh";
+  const campaignCardanoAddress = campaign.walletAddress || "addr_test1qqfpkkpkhhlrd9ve0smzjphc09hafcmgj74k5sskxz6sxxc0uufz0d0k8h4sfgfwh9v6tgtxea806qw7dmeg4c8yqtdstcyu88";
 
   const predefinedAmounts = [25, 50, 100, 250, 500, 1000];
 

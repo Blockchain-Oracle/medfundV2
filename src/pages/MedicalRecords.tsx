@@ -1,13 +1,41 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Filter, Plus, Clock } from "lucide-react";
+import { FileText, Filter, Plus, Clock, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePrivy } from "@privy-io/react-auth";
+import { getUserMedicalRecords } from "@/lib/db/helpers";
+import { toast } from "sonner";
 
 const MedicalRecords = () => {
-  const { authenticated } = usePrivy();
+  const { authenticated, user } = usePrivy();
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  
+  // Load medical records from database
+  useEffect(() => {
+    const fetchRecords = async () => {
+      if (!authenticated || !user) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const fetchedRecords = await getUserMedicalRecords(user.id);
+        setRecords(fetchedRecords);
+      } catch (error) {
+        console.error('Error fetching medical records:', error);
+        toast.error('Failed to load medical records');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRecords();
+  }, [authenticated, user]);
   
   // If not authenticated, user shouldn't be able to access medical records
   if (!authenticated) {
@@ -30,57 +58,19 @@ const MedicalRecords = () => {
     );
   }
   
-  const records = [
-    {
-      title: "Annual Physical Examination",
-      doctor: "Dr. Sarah Johnson",
-      type: "Visit",
-      date: "May 10, 2024",
-      shared: true
-    },
-    {
-      title: "Comprehensive Blood Panel",
-      doctor: "City Medical Lab",
-      type: "Test",
-      date: "May 12, 2024",
-      shared: false
-    },
-    {
-      title: "Lisinopril Prescription",
-      doctor: "Dr. Robert Chen",
-      type: "Medication",
-      date: "April 15, 2024",
-      shared: true
-    },
-    {
-      title: "Dental Cleaning",
-      doctor: "Dr. Maria Garcia, DDS",
-      type: "Procedure",
-      date: "March 22, 2024",
-      shared: false
-    },
-    {
-      title: "Cardiology Consultation",
-      doctor: "Dr. James Wilson",
-      type: "Visit",
-      date: "February 18, 2024",
-      shared: true
-    },
-    {
-      title: "COVID-19 PCR Test",
-      doctor: "Urgent Care Center",
-      type: "Test",
-      date: "January 5, 2024",
-      shared: false
-    }
-  ];
+  // Filter records based on active tab
+  const filteredRecords = activeTab === 'all' 
+    ? records 
+    : records.filter(record => record.recordType.toLowerCase() === activeTab);
 
   const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Visit': return 'bg-blue-100 text-blue-800';
-      case 'Test': return 'bg-green-100 text-green-800';
-      case 'Medication': return 'bg-purple-100 text-purple-800';
-      case 'Procedure': return 'bg-orange-100 text-orange-800';
+    switch (type.toLowerCase()) {
+      case 'surgery': return 'bg-blue-100 text-blue-800';
+      case 'test_result': return 'bg-green-100 text-green-800';
+      case 'prescription': return 'bg-purple-100 text-purple-800';
+      case 'treatment': return 'bg-orange-100 text-orange-800';
+      case 'consultation': return 'bg-yellow-100 text-yellow-800';
+      case 'diagnosis': return 'bg-pink-100 text-pink-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -120,42 +110,56 @@ const MedicalRecords = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="all" className="w-full">
+            <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="visits">Visits</TabsTrigger>
-                <TabsTrigger value="tests">Tests</TabsTrigger>
-                <TabsTrigger value="medications">Medications</TabsTrigger>
-                <TabsTrigger value="procedures">Procedures</TabsTrigger>
+                <TabsTrigger value="consultation">Visits</TabsTrigger>
+                <TabsTrigger value="test_result">Tests</TabsTrigger>
+                <TabsTrigger value="prescription">Medications</TabsTrigger>
+                <TabsTrigger value="surgery">Procedures</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="all" className="mt-6">
-                <div className="space-y-4">
-                  {records.map((record, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <h3 className="font-medium text-blue-600">{record.title}</h3>
-                          {record.shared && (
-                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                              Shared
-                            </span>
-                          )}
+              <TabsContent value={activeTab} className="mt-6">
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                  </div>
+                ) : filteredRecords.length > 0 ? (
+                  <div className="space-y-4">
+                    {filteredRecords.map((record) => (
+                      <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3">
+                            <h3 className="font-medium text-blue-600">{record.title}</h3>
+                            {record.isShared && (
+                              <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                Shared
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{record.provider || 'Unknown Provider'}</p>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{record.doctor}</p>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <span className={`px-2 py-1 text-xs rounded ${getTypeColor(record.type)}`}>
-                          {record.type}
-                        </span>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Clock className="w-4 h-4 mr-1" />
-                          {record.date}
+                        <div className="flex items-center space-x-4">
+                          <span className={`px-2 py-1 text-xs rounded ${getTypeColor(record.recordType)}`}>
+                            {record.recordType.replace('_', ' ')}
+                          </span>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {new Date(record.recordDate).toLocaleDateString()}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">No medical records found.</p>
+                    <Button className="mt-4">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Record
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>

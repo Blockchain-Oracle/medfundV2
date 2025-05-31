@@ -9,11 +9,14 @@ export const users = pgTable('users', {
   phone: varchar('phone', { length: 50 }),
   address: text('address'),
   avatarUrl: text('avatar_url'),
+  walletAddress: text('wallet_address'),
   isVerified: boolean('is_verified').default(false),
   role: varchar('role', { length: 50 }).default('user'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
+
+// Relations are handled in their respective schema files
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert; 

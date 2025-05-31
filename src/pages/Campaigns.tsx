@@ -7,104 +7,103 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Heart, Search, Filter, ArrowLeft, MapPin, Clock, Users } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+
+// API client function
+const fetchCampaigns = async () => {
+  const { data } = await axios.get('/api/campaigns');
+  return data;
+};
+
+interface Campaign {
+  id: string;
+  title: string;
+  description: string;
+  raised: string;
+  goal: string;
+  isUrgent: boolean;
+  category: string;
+  imageUrl?: string;
+  location?: string;
+  endDate?: string;
+  createdAt: string;
+}
 
 const Campaigns = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [filterBy, setFilterBy] = useState("all");
 
-  // Update the mock campaigns data with actual image paths
-  const campaigns = [
-    {
-      id: 1,
-      title: "Emergency Heart Surgery",
-      description: "Help John receive his life-saving heart surgery. Your contribution makes a difference!",
-      raised: 35000,
-      goal: 50000,
-      urgent: true,
-      category: "surgery",
-      daysLeft: 15,
-      donors: 234,
-      image: "/images/campaign1.jpeg",
-      location: "Sydney, NSW"
-    },
-    {
-      id: 2,
-      title: "Cancer Treatment Fund",
-      description: "Supporting Maria through her cancer treatment journey with chemotherapy and care.",
-      raised: 22000,
-      goal: 40000,
-      urgent: false,
-      category: "treatment",
-      daysLeft: 45,
-      donors: 156,
-      image: "/images/campaign2.jpg",
-      location: "Melbourne, VIC"
-    },
-    {
-      id: 3,
-      title: "Child's Surgery Fund",
-      description: "Help little Emma get the surgery she needs to walk again.",
-      raised: 18000,
-      goal: 25000,
-      urgent: true,
-      category: "surgery",
-      daysLeft: 8,
-      donors: 89,
-      image: "/images/campaign3.jpg",
-      location: "Brisbane, QLD"
-    },
-    {
-      id: 4,
-      title: "Diabetes Management",
-      description: "Supporting ongoing diabetes treatment and medication costs.",
-      raised: 8500,
-      goal: 15000,
-      urgent: false,
-      category: "treatment",
-      daysLeft: 30,
-      donors: 67,
-      image: "/images/campaign4.jpg",
-      location: "Perth, WA"
-    },
-    {
-      id: 5,
-      title: "Mental Health Support",
-      description: "Therapy and mental health treatment for anxiety and depression.",
-      raised: 5200,
-      goal: 12000,
-      urgent: false,
-      category: "therapy",
-      daysLeft: 60,
-      donors: 43,
-      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&h=300&fit=crop",
-      location: "Adelaide, SA"
-    },
-    {
-      id: 6,
-      title: "Emergency Accident Recovery",
-      description: "Recovery from serious car accident requiring multiple surgeries.",
-      raised: 42000,
-      goal: 60000,
-      urgent: true,
-      category: "emergency",
-      daysLeft: 20,
-      donors: 312,
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=400&h=300&fit=crop",
-      location: "Darwin, NT"
-    }
-  ];
-
-  const filteredCampaigns = campaigns.filter(campaign => {
-    const matchesSearch = campaign.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         campaign.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesFilter = filterBy === "all" || 
-                         (filterBy === "urgent" && campaign.urgent) ||
-                         (filterBy === "category" && campaign.category === filterBy);
-    
-    return matchesSearch && matchesFilter;
+  // Fetch campaigns
+  const { data: campaigns = [], isLoading, error } = useQuery({
+    queryKey: ['campaigns'],
+    queryFn: fetchCampaigns,
   });
+
+  // Filter and sort campaigns
+  const processedCampaigns = campaigns
+    .filter((campaign: Campaign) => {
+      const matchesSearch = campaign.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           campaign.description.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesFilter = filterBy === "all" || 
+                           (filterBy === "urgent" && campaign.isUrgent) ||
+                           (filterBy === campaign.category);
+      
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a: Campaign, b: Campaign) => {
+      switch (sortBy) {
+        case "newest":
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "goal_high":
+          return parseFloat(b.goal) - parseFloat(a.goal);
+        case "goal_low":
+          return parseFloat(a.goal) - parseFloat(b.goal);
+        case "progress":
+          return (parseFloat(b.raised) / parseFloat(b.goal)) - (parseFloat(a.raised) / parseFloat(a.goal));
+        default:
+          return 0;
+      }
+    });
+
+  // Calculate days left for a campaign
+  const getDaysLeft = (endDateStr?: string) => {
+    if (!endDateStr) return 0;
+    const endDate = new Date(endDateStr);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-white text-xl">Loading campaigns...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <h2 className="text-2xl font-bold mb-4">Error loading campaigns</h2>
+          <p className="mb-6">There was a problem fetching the campaigns.</p>
+          <Button onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 relative overflow-hidden">
@@ -174,17 +173,17 @@ const Campaigns = () => {
       <section className="relative z-10 py-12">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredCampaigns.map((campaign) => (
+            {processedCampaigns.map((campaign: Campaign) => (
               <Card key={campaign.id} className="bg-white/95 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
                 {/* Campaign Image */}
                 <div className="relative h-48 overflow-hidden">
                   <img 
-                    src={campaign.image} 
+                    src={campaign.imageUrl || "/images/campaign1.jpeg"} 
                     alt={campaign.title}
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                   />
                   <div className="absolute top-4 left-4 flex gap-2">
-                    {campaign.urgent && <Badge variant="destructive">Urgent</Badge>}
+                    {campaign.isUrgent && <Badge variant="destructive">Urgent</Badge>}
                     <Badge variant="secondary" className="bg-white/90 text-gray-800">
                       {campaign.category}
                     </Badge>
@@ -195,7 +194,7 @@ const Campaigns = () => {
                   <CardTitle className="text-gray-800 text-lg line-clamp-2">{campaign.title}</CardTitle>
                   <div className="flex items-center text-sm text-gray-500 mt-2">
                     <MapPin className="h-4 w-4 mr-1" />
-                    {campaign.location}
+                    {campaign.location || "Location not specified"}
                   </div>
                   <CardDescription className="text-gray-600 line-clamp-2 mt-2">
                     {campaign.description}
@@ -204,21 +203,22 @@ const Campaigns = () => {
                 
                 <CardContent className="pt-0">
                   <div className="space-y-4">
-                    <Progress value={(campaign.raised / campaign.goal) * 100} className="h-2" />
+                    <Progress value={(parseFloat(campaign.raised) / parseFloat(campaign.goal)) * 100} className="h-2" />
                     
                     <div className="flex justify-between text-sm">
-                      <span className="font-semibold">A{campaign.raised.toLocaleString()} raised</span>
-                      <span className="text-gray-600">A{campaign.goal.toLocaleString()} goal</span>
+                      <span className="font-semibold">A{parseFloat(campaign.raised).toLocaleString()} raised</span>
+                      <span className="text-gray-600">A{parseFloat(campaign.goal).toLocaleString()} goal</span>
                     </div>
                     
                     <div className="flex justify-between items-center text-sm text-gray-600">
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-1" />
-                        {campaign.donors} donors
+                        {/* We don't have donors count from API yet, display placeholder */}
+                        — donors
                       </div>
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
-                        {campaign.daysLeft} days left
+                        {getDaysLeft(campaign.endDate)} days left
                       </div>
                     </div>
                     
@@ -238,7 +238,7 @@ const Campaigns = () => {
             ))}
           </div>
           
-          {filteredCampaigns.length === 0 && (
+          {processedCampaigns.length === 0 && (
             <div className="text-center py-12">
               <p className="text-white text-xl">No campaigns found matching your criteria.</p>
               <Button 
