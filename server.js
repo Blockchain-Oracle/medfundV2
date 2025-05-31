@@ -1,4 +1,5 @@
 // Simple Express server for handling Stripe API requests in development
+import 'module-alias/register.js';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -13,6 +14,12 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Set up module aliases
+import moduleAlias from 'module-alias';
+moduleAlias.addAliases({
+  '@': path.join(__dirname, 'src')
+});
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -20,6 +27,11 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
+
+// Import our handlers
+import { handler as paymentsStatusHandler } from './src/api/payments/status/[id].ts';
+import { handler as donationsHandler } from './src/api/donations/index.ts';
+import { handler as recentDonationsHandler } from './src/api/campaigns/recent-donations.ts';
 
 // API Routes
 
@@ -111,6 +123,92 @@ app.get('/api/campaigns/:id/donations', async (req, res) => {
   } catch (error) {
     console.error('Error fetching campaign donations:', error);
     res.status(500).json({ error: 'Failed to fetch campaign donations' });
+  }
+});
+
+// API Routes
+app.use('/api/payments/status/:id', async (req, res) => {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const request = new Request(url, {
+      method: req.method,
+      headers: new Headers(req.headers),
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
+    });
+    
+    const response = await paymentsStatusHandler(request);
+    
+    // Set status code
+    res.status(response.status);
+    
+    // Set headers
+    for (const [key, value] of response.headers.entries()) {
+      res.setHeader(key, value);
+    }
+    
+    // Send body
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error('Error handling payment status request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Donations API endpoint
+app.use('/api/donations', async (req, res) => {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const request = new Request(url, {
+      method: req.method,
+      headers: new Headers(req.headers),
+      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+    });
+    
+    const response = await donationsHandler(request);
+    
+    // Set status code
+    res.status(response.status);
+    
+    // Set headers
+    for (const [key, value] of response.headers.entries()) {
+      res.setHeader(key, value);
+    }
+    
+    // Send body
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error('Error handling donations request:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Recent Donations API endpoint
+app.use('/api/campaigns/recent-donations', async (req, res) => {
+  try {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const request = new Request(url, {
+      method: req.method,
+      headers: new Headers(req.headers)
+    });
+    
+    const response = await recentDonationsHandler(request);
+    
+    // Set status code
+    res.status(response.status);
+    
+    // Set headers
+    for (const [key, value] of response.headers.entries()) {
+      res.setHeader(key, value);
+    }
+    
+    // Send body
+    const body = await response.text();
+    res.send(body);
+  } catch (error) {
+    console.error('Error handling recent donations request:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 

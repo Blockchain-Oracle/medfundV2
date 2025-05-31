@@ -11,6 +11,9 @@ import { toast } from "sonner";
 import CardanoPaymentModal from "./CardanoPaymentModal";
 import StripePaymentModal from "./StripePaymentModal";
 import useCardano from "@/hooks/useCardano";
+import axios from "axios";
+import { usePrivy } from "@privy-io/react-auth";
+import { createId } from "@/lib/db/utils";
 
 interface DonationFormProps {
   campaign: {
@@ -33,6 +36,9 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
   
   // Use the Cardano hook for USD to ADA conversion
   const { usdToAda } = useCardano();
+  
+  // Get user info for donation
+  const { user } = usePrivy();
 
   // Mock campaign wallet address - in a real app, this would come from the campaign data
   const campaignCardanoAddress = campaign.walletAddress || "addr_test1qqfpkkpkhhlrd9ve0smzjphc09hafcmgj74k5sskxz6sxxc0uufz0d0k8h4sfgfwh9v6tgtxea806qw7dmeg4c8yqtdstcyu88";
@@ -54,17 +60,69 @@ const DonationForm = ({ campaign, onClose }: DonationFormProps) => {
     }
   };
 
-  const handleStripeSuccess = () => {
+  const handleStripeSuccess = async () => {
     // This function is called when Stripe payment is successful
-    setShowStripeModal(false);
-    toast.success(`Thank you for your donation of A${totalAmount.toFixed(2)}!`);
-    onClose();
+    try {
+      setIsProcessing(true);
+      
+      // Create donation record in database
+      const donationData = {
+        id: createId(),
+        campaignId: campaign.id.toString(),
+        userId: anonymous ? 'anonymous' : (user?.id || 'anonymous'),
+        amount: totalAmount.toString(),
+        status: 'completed',
+        anonymous: anonymous,
+        transactionId: `stripe_${Date.now()}`,
+        paymentMethod: 'stripe',
+        message: ''
+      };
+      
+      // In a real app, you would call your API endpoint to create the donation
+      await axios.post('/api/donations', donationData);
+      
+      setShowStripeModal(false);
+      toast.success(`Thank you for your donation of $${totalAmount.toFixed(2)}!`);
+      onClose();
+    } catch (error) {
+      console.error('Error recording donation:', error);
+      toast.error('There was a problem recording your donation.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handleCardanoSuccess = () => {
+  const handleCardanoSuccess = async () => {
     // This function is called when Cardano payment is successful
-    setShowCardanoModal(false);
-    onClose();
+    try {
+      setIsProcessing(true);
+      
+      // Create donation record in database
+      const adaAmount = getAdaAmount();
+      const donationData = {
+        id: createId(),
+        campaignId: campaign.id.toString(),
+        userId: anonymous ? 'anonymous' : (user?.id || 'anonymous'),
+        amount: adaAmount.toString(),
+        status: 'completed',
+        anonymous: anonymous,
+        transactionId: `cardano_${Date.now()}`,
+        paymentMethod: 'cardano',
+        message: ''
+      };
+      
+      // In a real app, you would call your API endpoint to create the donation
+      await axios.post('/api/donations', donationData);
+      
+      setShowCardanoModal(false);
+      toast.success(`Thank you for your donation of ${adaAmount.toFixed(2)} ADA!`);
+      onClose();
+    } catch (error) {
+      console.error('Error recording donation:', error);
+      toast.error('There was a problem recording your donation.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const totalAmount = parseFloat(donationAmount || "0") + parseFloat(tipAmount || "0");

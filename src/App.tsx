@@ -10,11 +10,14 @@ import Dashboard from "./pages/Dashboard";
 import MedicalRecords from "./pages/MedicalRecords";
 import NotFound from "./pages/NotFound";
 import { Header } from "@/components/ui/Header";
+import { SupabaseInitializer } from "@/components/SupabaseInitializer";
 
 const App = () => (
   <TooltipProvider>
     <Toaster />
     <Sonner />
+    {/* Initialize Supabase storage buckets */}
+    <SupabaseInitializer />
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow">

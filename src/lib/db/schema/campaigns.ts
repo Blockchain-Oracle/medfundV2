@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, timestamp, boolean, pgEnum, decimal } from 'drizzle-orm/pg-core';
+import { pgTable, text, varchar, timestamp, boolean, pgEnum, decimal, integer } from 'drizzle-orm/pg-core';
 import { createId } from '../utils';
 import { users } from './users';
 import { relations } from 'drizzle-orm';
@@ -32,6 +32,7 @@ export const campaigns = pgTable('campaigns', {
   storyContent: text('story_content'),
   goal: decimal('goal', { precision: 10, scale: 2 }).notNull(),
   raised: decimal('raised', { precision: 10, scale: 2 }).default('0').notNull(),
+  donorCount: integer('donor_count').default(0).notNull(),
   category: campaignCategoryEnum('category').notNull(),
   status: campaignStatusEnum('status').default('pending').notNull(),
   isUrgent: boolean('is_urgent').default(false),

@@ -2,10 +2,31 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://drijoftroejrdlqhfdya.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyaWpvZnRyb2VqcmRscWhmZHlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2MzE5NDMsImV4cCI6MjA2NDIwNzk0M30.jWlZAwJe7dYtRCVbrN-7VgVgb5A4acWx1eSat7dgWEA";
+// Support both browser and Node.js environments
+const isBrowser = typeof window !== 'undefined';
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Use environment variables for Supabase configuration
+let SUPABASE_URL = 'https://xcfziysmpitxuenoclsg.supabase.co';
+let SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjZnppeXNtcGl0eHVlbm9jbHNnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg2NDQwMTksImV4cCI6MjA2NDIyMDAxOX0._YHmuhCD0nmjjtcQ0six10f5-MeuGjvfj5HSb_oisrY';
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+if (isBrowser) {
+  // Browser environment - use import.meta.env
+  SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL;
+  SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_KEY || SUPABASE_ANON_KEY;
+} else {
+  // Node.js environment - use process.env
+  SUPABASE_URL = process.env.VITE_SUPABASE_URL || SUPABASE_URL;
+  SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_KEY || SUPABASE_ANON_KEY;
+}
+
+// Ensure we have values for URL and key
+if (!SUPABASE_URL) {
+  console.error('Supabase URL is required. Please check your environment variables.');
+}
+
+if (!SUPABASE_ANON_KEY) {
+  console.error('Supabase key is required. Please check your environment variables.');
+}
+
+// Regular client with anonymous privileges (for client-side operations)
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);

@@ -16,6 +16,7 @@ A decentralized medical crowdfunding platform built on Cardano blockchain and St
 - **UI**: TailwindCSS, shadcn/ui components
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: Privy
+- **Storage**: Supabase Storage for images and documents
 - **Payments**: 
   - Fiat: Stripe API integration
   - Crypto: Cardano blockchain integration
@@ -27,6 +28,7 @@ A decentralized medical crowdfunding platform built on Cardano blockchain and St
 
 - Node.js & npm - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - PostgreSQL database
+- Supabase account (for file storage)
 - Stripe account (for testing payments)
 
 ### Installation
@@ -71,6 +73,14 @@ pnpm db:migrate
 # View and manage your database with Drizzle Studio
 pnpm db:studio
 ```
+
+### Supabase Storage Setup
+
+The application uses Supabase for storing campaign images and medical documents:
+
+1. Create a [Supabase](https://supabase.com/) account and project
+2. Set up the required storage buckets and security policies
+3. Refer to the [Supabase Setup Guide](./docs/supabase-setup.md) for detailed instructions
 
 ### Docker Setup
 

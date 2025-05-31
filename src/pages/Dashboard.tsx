@@ -9,6 +9,7 @@ import { MedicalRecordsCard } from "@/components/dashboard/MedicalRecordsCard";
 import { PaymentInfoCard } from "@/components/dashboard/PaymentInfoCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { PaymentActivity } from "@/components/dashboard/PaymentActivity";
+import { RecentDonations } from "@/components/dashboard/RecentDonations";
 import { usePrivy } from "@privy-io/react-auth";
 
 const Dashboard = () => {
@@ -52,9 +53,10 @@ const Dashboard = () => {
         </div>
 
         {/* Activity Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <RecentActivity />
           <PaymentActivity />
+          <RecentDonations />
         </div>
       </div>
     </div>

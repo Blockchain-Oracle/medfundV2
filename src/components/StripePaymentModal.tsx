@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, CreditCard, Check, AlertCircle, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
+import axios from 'axios';
+import { usePrivy } from '@privy-io/react-auth';
+import { createId } from '@/lib/db/utils';
 
 // Initialize Stripe with your publishable key from environment variable
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -53,6 +56,7 @@ const StripePaymentForm = ({
   const [cardError, setCardError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
+  const { user } = usePrivy();
 
   // Card element styling
   const cardElementOptions = {
@@ -108,9 +112,36 @@ const StripePaymentForm = ({
         throw error;
       }
 
-      // Simulate a successful payment
-      setPaymentIntentId(paymentMethod.id);
+      // Set payment ID and update status
+      const paymentId = paymentMethod.id;
+      setPaymentIntentId(paymentId);
       setPaymentStatus('success');
+      
+      // Record the donation in the database
+      try {
+        // Extract campaign ID from URL
+        const urlParts = window.location.pathname.split('/');
+        const campaignId = urlParts[urlParts.length - 1];
+        
+        if (campaignId) {
+          const donationData = {
+            id: createId(),
+            campaignId,
+            userId: user?.id || 'anonymous',
+            amount: amount.toString(),
+            status: 'completed',
+            anonymous: false, 
+            transactionId: paymentId,
+            paymentMethod: 'stripe'
+          };
+          
+          await axios.post('/api/donations', donationData);
+        }
+      } catch (error) {
+        console.error('Error recording donation in database:', error);
+        // Still consider payment successful since Stripe processed it
+      }
+      
       toast.success('Payment successful!');
       
       // Notify parent component after a short delay

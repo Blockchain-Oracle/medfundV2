@@ -43,6 +43,7 @@ interface Campaign {
   createdAt: string;
   updatedAt: string;
   user?: User;
+  donorCount?: number;
 }
 
 interface CampaignUpdate {
@@ -296,7 +297,7 @@ const CampaignDetail = () => {
                   
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
-                      <div className="text-2xl font-semibold text-gray-800">{recentDonations.length}</div>
+                      <div className="text-2xl font-semibold text-gray-800">{campaign.donorCount || recentDonations.length}</div>
                       <div className="text-sm text-gray-600">donors</div>
                     </div>
                     <div>

@@ -264,6 +264,9 @@ importers:
       lovable-tagger:
         specifier: ^1.1.7
         version: 1.1.8(ts-node@10.9.2(@swc/core@1.11.29(@swc/helpers@0.5.17))(@types/node@22.15.29)(typescript@5.8.3))(vite@5.4.19(@types/node@22.15.29))
+      module-alias:
+        specifier: ^2.2.3
+        version: 2.2.3
       postcss:
         specifier: ^8.4.47
         version: 8.5.4
@@ -4753,6 +4756,9 @@ packages:
 
   mkdirp-classic@0.5.3:
     resolution: {integrity: sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==}
+
+  module-alias@2.2.3:
+    resolution: {integrity: sha512-23g5BFj4zdQL/b6tor7Ji+QY4pEfNH784BMslY9Qb0UnJWRAt+lQGLYmRaM0KDBwIG23ffEBELhZDP2rhi9f/Q==}
 
   motion@10.16.2:
     resolution: {integrity: sha512-p+PurYqfUdcJZvtnmAqu5fJgV2kR0uLFQuBKtLeFVTrYEVllI99tiOTSefVNYuip9ELTEkepIIDftNdze76NAQ==}
@@ -12189,6 +12195,8 @@ snapshots:
       typescript: 5.8.3
 
   mkdirp-classic@0.5.3: {}
+
+  module-alias@2.2.3: {}
 
   motion@10.16.2:
     dependencies:

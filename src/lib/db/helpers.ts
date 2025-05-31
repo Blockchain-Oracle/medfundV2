@@ -6,6 +6,8 @@ import { medicalRecords, MedicalRecord, NewMedicalRecord } from './schema/medica
 import { paymentMethods, PaymentMethod, NewPaymentMethod } from './schema/paymentMethods';
 import { campaignUpdates, CampaignUpdate, NewCampaignUpdate } from './schema/campaignUpdates';
 import { eq, and, or, desc, asc, count, sql } from 'drizzle-orm';
+import { uploadFile, uploadMultipleFiles } from '@/integrations/supabase/fileStorage';
+import { BUCKET_CAMPAIGN_DOCUMENTS, BUCKET_CAMPAIGN_IMAGES } from '@/integrations/supabase/createBuckets';
 
 // User operations
 export const findUserById = async (id: string): Promise<User | undefined> => {
@@ -75,13 +77,35 @@ export const deleteCampaignUpdate = async (id: string): Promise<boolean> => {
 export const createDonation = async (data: NewDonation): Promise<Donation> => {
   const result = await db.insert(donations).values(data).returning();
   
-  // Update campaign raised amount
+  // Update campaign raised amount and donor count
   const donation = result[0];
   const campaign = await findCampaignById(donation.campaignId);
-  
   if (campaign && donation.status === 'completed') {
-    const newRaised = Number(campaign.raised) + Number(donation.amount);
-    await updateCampaign(campaign.id, { raised: newRaised.toString() });
+    // Check if this is a new donor for this campaign
+    const existingDonations = await db.select()
+      .from(donations)
+      .where(
+        and(
+          eq(donations.campaignId, donation.campaignId),
+          eq(donations.userId, donation.userId),
+          eq(donations.status, 'completed')
+        )
+      );
+    
+    const isNewDonor = existingDonations.length === 1; // Only the current donation exists
+    
+    // Update campaign with new raised amount and donor count if needed
+    const updateData: Partial<NewCampaign> = {
+      raised: (Number(campaign.raised) + Number(donation.amount)).toString(),
+    };
+    
+    // Increment donor count if this is a new donor
+    if (isNewDonor) {
+      updateData.donorCount = (campaign.donorCount || 0) + 1;
+    }
+    
+    // Update the campaign
+    await updateCampaign(campaign.id, updateData);
   }
   
   return donation;
@@ -138,29 +162,34 @@ export const createPaymentMethod = async (data: NewPaymentMethod): Promise<Payme
 
 // Create a campaign with image upload
 export const createCampaignWithImage = async (data: NewCampaign, previewImage: File | null, documents: File[] = []): Promise<Campaign> => {
-  // In a real app, you would upload the files to a storage service first
-  // For demo purposes, we'll just pretend it was successful
-  
   let imageUrl = null;
+  let documentUrls: string[] = [];
+  
+  // Upload preview image to Supabase storage if provided
   if (previewImage) {
-    // Mock upload process
-    // In a real app, you would use something like:
-    // const { data: uploadData, error } = await supabaseClient.storage
-    //   .from('campaign-images')
-    //   .upload(`${Date.now()}-${previewImage.name}`, previewImage);
-    // if (error) throw error;
-    // imageUrl = uploadData.publicUrl;
+    const { publicUrl, error } = await uploadFile(previewImage, BUCKET_CAMPAIGN_IMAGES, 'previews');
     
-    // Mock successful upload
-    imageUrl = `https://example.com/campaign-images/${Date.now()}-${previewImage.name}`;
+    if (error) {
+      console.error('Error uploading preview image:', error);
+      throw new Error(`Failed to upload preview image: ${error.message}`);
+    }
+    
+    imageUrl = publicUrl;
   }
   
-  // Process document uploads
-  const documentUrls = documents.map((doc, index) => 
-    `https://example.com/documents/${Date.now()}-${index}-${doc.name}`
-  );
+  // Upload documents to Supabase storage if provided
+  if (documents.length > 0) {
+    const { publicUrls, errors } = await uploadMultipleFiles(documents, BUCKET_CAMPAIGN_DOCUMENTS, 'medical');
+    
+    if (errors.length > 0) {
+      console.error('Errors uploading documents:', errors);
+      // We'll continue even if some documents failed to upload
+    }
+    
+    documentUrls = publicUrls;
+  }
   
-  // Create campaign with image URL
+  // Create campaign with uploaded URLs
   const campaignData = {
     ...data,
     imageUrl,

@@ -5,6 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { X, Wallet, ShieldCheck, Check, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import useCardano from '@/hooks/useCardano';
+import axios from 'axios';
+import { usePrivy } from '@privy-io/react-auth';
+import { createId } from '@/lib/db/utils';
 
 interface CardanoPaymentModalProps {
   amount: number; // Amount in ADA
@@ -24,6 +27,7 @@ export const CardanoPaymentModal = ({
   const { connected, balance, loading, sendAda, hasEnoughAda, estimatedFee } = useCardano();
   const [paymentStatus, setPaymentStatus] = useState<'connecting' | 'preparing' | 'confirming' | 'success' | 'error' | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const { user } = usePrivy();
 
   // Handle payment process
   const handlePayment = async () => {
@@ -55,10 +59,38 @@ export const CardanoPaymentModal = ({
       setPaymentStatus('confirming');
       
       // Send the transaction
-      const { txHash } = await sendAda(recipientAddress, amount);
+      const { txHash: hash } = await sendAda(recipientAddress, amount);
       
-      setTxHash(txHash);
+      setTxHash(hash);
       setPaymentStatus('success');
+      
+      // Record the donation in the database
+      try {
+        // Extract campaign ID from recipient address
+        // In a real app, you would pass the campaign ID directly to this component
+        // For now, we'll parse it from the URL
+        const urlParts = window.location.pathname.split('/');
+        const campaignId = urlParts[urlParts.length - 1];
+        
+        if (campaignId) {
+          const donationData = {
+            id: createId(),
+            campaignId,
+            userId: user?.id || 'anonymous',
+            amount: amount.toString(),
+            status: 'completed',
+            anonymous: false,
+            transactionId: hash,
+            paymentMethod: 'cardano'
+          };
+          
+          await axios.post('/api/donations', donationData);
+        }
+      } catch (error) {
+        console.error('Error recording donation in database:', error);
+        // We still consider the payment successful since the blockchain transaction succeeded
+      }
+      
       toast.success('Donation successful!');
       
       // Notify parent component about successful payment

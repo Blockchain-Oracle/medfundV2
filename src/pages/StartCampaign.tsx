@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle, X, File, FileImage, Info } from "lucide-react";
+import { Heart, ArrowLeft, Upload, Shield, FileText, CheckCircle, X, File, FileImage, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { usePrivy } from "@privy-io/react-auth";
 import { createCampaignWithImage } from "@/lib/db/helpers";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const StartCampaign = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -34,6 +35,8 @@ const StartCampaign = () => {
     }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [fileUploadErrors, setFileUploadErrors] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user, authenticated } = usePrivy();
 
@@ -52,6 +55,7 @@ const StartCampaign = () => {
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
+      setFileUploadErrors([]);
       
       // Check if user is authenticated
       if (!authenticated || !user) {
@@ -82,6 +86,9 @@ const StartCampaign = () => {
         status: 'pending' as const // campaigns start as pending until approved
       };
       
+      // Show toast for starting file uploads
+      toast.info("Uploading files and creating campaign...");
+      
       // Create the campaign in the database using the helper
       const campaign = await createCampaignWithImage(
         campaignData,
@@ -96,7 +103,14 @@ const StartCampaign = () => {
       
     } catch (error) {
       console.error("Error submitting campaign:", error);
-      toast.error("Failed to submit campaign. Please try again.");
+      
+      // Show more descriptive error based on the error message
+      if (error instanceof Error && error.message.includes('upload')) {
+        setFileUploadErrors([error.message]);
+        toast.error("Failed to upload files. Please try again with smaller files or different file formats.");
+      } else {
+        toast.error("Failed to submit campaign. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -104,23 +118,66 @@ const StartCampaign = () => {
 
   const progressPercentage = (currentStep / totalSteps) * 100;
 
+  // Handle image upload
+  const handleImageUpload = (file: File) => {
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image file size exceeds 5MB limit");
+      return;
+    }
+    
+    // Validate file type
+    if (!file.type.match(/^image\/(jpeg|png|jpg|webp)$/)) {
+      toast.error("Unsupported file format. Please use JPEG, PNG or WebP");
+      return;
+    }
+    
+    setIsImageUploading(true);
+    
+    // Create preview and set the file in state
+    setTimeout(() => {
+      setFormData({...formData, previewImage: file});
+      setIsImageUploading(false);
+      toast.success("Image added successfully");
+    }, 500);
+  };
+
   // Dropzone implementation
   const onDrop = useCallback((acceptedFiles) => {
-    // Show success toast for upload
-    toast.success(`${acceptedFiles.length} file(s) added`);
+    // Validate files
+    const validFiles = acceptedFiles.filter(file => {
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setFileUploadErrors(prev => [...prev, `File ${file.name} exceeds 10MB limit`]);
+        return false;
+      }
+      
+      // Check file type
+      if (!file.type.match(/^(application\/pdf|image\/(jpeg|png|jpg))$/)) {
+        setFileUploadErrors(prev => [...prev, `File ${file.name} is not a supported format`]);
+        return false;
+      }
+      
+      return true;
+    });
     
-    // Update form data with the new files
-    setFormData(prevData => ({
-      ...prevData,
-      documents: [
-        ...prevData.documents,
-        ...acceptedFiles.map(file => 
-          Object.assign(file, {
-            preview: URL.createObjectURL(file)
-          })
-        )
-      ]
-    }));
+    if (validFiles.length > 0) {
+      // Show success toast for upload
+      toast.success(`${validFiles.length} file(s) added`);
+      
+      // Update form data with the new files
+      setFormData(prevData => ({
+        ...prevData,
+        documents: [
+          ...prevData.documents,
+          ...validFiles.map(file => 
+            Object.assign(file, {
+              preview: URL.createObjectURL(file)
+            })
+          )
+        ]
+      }));
+    }
   }, []);
 
   const removeFile = (fileIndex) => {
@@ -181,19 +238,33 @@ const StartCampaign = () => {
             </CardContent>
           </Card>
 
+          {/* Error messages */}
+          {fileUploadErrors.length > 0 && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Error uploading files</AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc list-inside">
+                  {fileUploadErrors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Step Content */}
           <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-xl">
             <CardHeader>
               <CardTitle className="text-2xl">
                 {currentStep === 1 && "Campaign Details"}
-                {currentStep === 2 && "Personal Information"}
-                {currentStep === 3 && "Medical Documentation"}
+                {currentStep === 2 && "Campaign Story"}
+                {currentStep === 3 && "Personal Information"}
                 {currentStep === 4 && "Review & Submit"}
               </CardTitle>
               <CardDescription>
                 {currentStep === 1 && "Tell us about your medical fundraising needs"}
-                {currentStep === 2 && "Provide your contact information for verification"}
-                {currentStep === 3 && "Upload medical documents to verify your campaign"}
+                {currentStep === 2 && "Share your story and journey"}
+                {currentStep === 3 && "Provide your contact information for verification"}
                 {currentStep === 4 && "Review your information before submitting"}
               </CardDescription>
             </CardHeader>
@@ -233,6 +304,11 @@ const StartCampaign = () => {
                               <X className="h-4 w-4" />
                             </button>
                           </div>
+                        ) : isImageUploading ? (
+                          <div className="flex flex-col items-center justify-center">
+                            <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-2" />
+                            <p className="text-sm text-gray-500">Uploading image...</p>
+                          </div>
                         ) : (
                           <>
                             <FileImage className="h-12 w-12 text-gray-400" />
@@ -240,7 +316,7 @@ const StartCampaign = () => {
                               Upload a main image for your campaign
                             </p>
                             <p className="text-xs text-gray-400 mt-1">
-                              Recommended: Square image, at least 800x800px
+                              Recommended: Square image, at least 800x800px (Max: 5MB)
                             </p>
                             <label className="mt-4">
                               <span className="bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer hover:bg-blue-700 transition-colors">
@@ -248,12 +324,12 @@ const StartCampaign = () => {
                               </span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpeg,image/png,image/webp"
                                 className="hidden"
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
-                                    setFormData({...formData, previewImage: file});
+                                    handleImageUpload(file);
                                   }
                                 }}
                               />
@@ -590,7 +666,7 @@ const StartCampaign = () => {
                 <Button 
                   variant="outline" 
                   onClick={handlePrevious}
-                  disabled={currentStep === 1}
+                  disabled={currentStep === 1 || isSubmitting}
                 >
                   Previous
                 </Button>
@@ -599,6 +675,7 @@ const StartCampaign = () => {
                   <Button 
                     onClick={handleNext}
                     className="bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={isSubmitting}
                   >
                     Next Step
                   </Button>
@@ -608,7 +685,12 @@ const StartCampaign = () => {
                     className="bg-green-600 hover:bg-green-700 text-white"
                     disabled={isSubmitting}
                   >
-                    Submit Campaign
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" /> 
+                        Creating Campaign...
+                      </>
+                    ) : "Submit Campaign"}
                   </Button>
                 )}
               </div>
