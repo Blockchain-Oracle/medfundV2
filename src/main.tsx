@@ -8,7 +8,6 @@ import "./index.css";
 import CardanoWalletProvider from "./components/CardanoWalletProvider";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { ThemeProvider } from 'next-themes';
 import axios from 'axios';
 
 // This Privy app ID is for development only. For production, you should use your own Privy app ID.
@@ -47,11 +46,9 @@ createRoot(document.getElementById("root")!).render(
     >
       <CardanoWalletProvider>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <BrowserRouter>
               <App />
             </BrowserRouter>
-          </ThemeProvider>
           {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
         </QueryClientProvider>
       </CardanoWalletProvider>
