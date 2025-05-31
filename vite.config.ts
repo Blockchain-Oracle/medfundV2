@@ -16,6 +16,12 @@ export default defineConfig(({ mode }) => ({
         secure: false,
       },
     },
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      'happy-viper-factual.ngrok-free.app',
+      // Add any other domains you might use with ngrok
+    ],
   },
   plugins: [
     react(),
@@ -33,6 +39,11 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      external: ['postgres'],
     },
   },
 }));
