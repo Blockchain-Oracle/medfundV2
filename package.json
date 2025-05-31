@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node src/lib/db/migrate-db.mjs",
+    "db:fix": "node src/lib/db/fix-migrations.mjs",
     "db:seed": "node src/lib/db/seed-db.mjs",
     "db:studio": "drizzle-kit studio",
     "api": "tsx server.js",
